@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel da Loja</title>
+<meta name="theme-color" content="#0b0710">
+<link rel="manifest" href="/painel.webmanifest">
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Painel">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/estilo.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/comum.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="logo" id="topNome">✦ Painel da Loja</div>
+    <div class="tabs" id="tabs" style="display:none">
+      <button class="tab on" data-v="ini">Início</button>
+      <button class="tab" data-v="per">Perfumes</button>
+      <button class="tab" data-v="ped">Pedidos</button>
+      <button class="tab" data-v="pro">Promoções</button>
+      <button class="tab" data-v="loj">Loja</button>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <section id="vLogin" class="panel">
+    <div class="box" style="max-width:420px;margin:30px auto">
+      <h3 id="lgTit">🔐 Entrar no painel</h3>
+      <label>E-mail</label><input id="lgEmail" type="email" autocomplete="email">
+      <label>Senha</label><input id="lgSenha" type="password" autocomplete="current-password">
+      <button class="btn gold" id="lgEntrar" style="margin-top:14px">Entrar</button>
+      <button class="btn ghost" id="lgCriar">Ainda não tenho conta • Criar conta</button>
+      <button class="btn ghost" id="lgEsqueci" style="margin-top:0">Esqueci a senha</button>
+      <p class="note" id="lgMsg"></p>
+    </div>
+  </section>
+
+  <!-- NOVA SENHA -->
+  <section id="vSenha" class="panel">
+    <div class="box" style="max-width:420px;margin:30px auto">
+      <h3>🔑 Criar nova senha</h3>
+      <label>Nova senha (mínimo 6 letras ou números)</label><input id="nsSenha" type="password" autocomplete="new-password">
+      <button class="btn gold" id="nsSalvar" style="margin-top:14px">Salvar nova senha</button>
+    </div>
+  </section>
+
+  <!-- ATIVAR -->
+  <section id="vAtivar" class="panel">
+    <div class="box" style="max-width:420px;margin:30px auto">
+      <h3>🗝️ Ativar sua loja</h3>
+      <p style="font-size:13px;color:#d6cbe6">Digite o código de ativação que você recebeu.</p>
+      <label>Código</label><input id="atCod" placeholder="Ex.: A1B2C3" style="text-transform:uppercase;letter-spacing:3px;font-size:20px;text-align:center">
+      <button class="btn gold" id="atBtn" style="margin-top:14px">Ativar minha loja</button>
+      <button class="btn ghost" id="atSair">Sair desta conta</button>
+      <p class="note" id="atMsg"></p>
+    </div>
+  </section>
+
+  <!-- INÍCIO -->
+  <section id="ini" class="panel">
+    <div class="box">
+      <h3>🔗 Link da sua loja</h3>
+      <div class="linkbox"><span id="linkTxt" style="flex:1"></span></div>
+      <div class="acts" style="margin-top:10px">
+        <button class="btn gold" id="copiar" style="padding:11px;font-size:13px">📋 Copiar link</button>
+        <a class="btn zap" id="compartilhar" target="_blank" rel="noopener" style="padding:11px;font-size:13px">💬 Mandar no Zap</a>
+      </div>
+      <a class="btn ghost" id="abrirCat" target="_blank" rel="noopener">👁️ Ver meu catálogo</a>
+      <p class="note">Coloque esse link na bio do Instagram e mande nas conversas do WhatsApp.</p>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><b id="kVis">–</b><span>visitas</span></div>
+      <div class="kpi"><b id="kPed">–</b><span>pedidos</span></div>
+      <div class="kpi"><b id="kVen">–</b><span>vendas</span></div>
+      <div class="kpi"><b id="kGir">–</b><span>giros da roleta</span></div>
+      <div class="kpi"><b id="kRes">–</b><span>prêmios resgatados</span></div>
+      <div class="kpi"><b id="kPer">–</b><span>perfumes</span></div>
+    </div>
+    <div class="box"><h3>🔥 Perfumes que mais chamam atenção</h3><div id="bars"></div></div>
+    <div class="box" id="instalarBox">
+      <h3>📲 Instalar o painel no celular</h3>
+      <button class="btn gold" id="instalar" style="display:none">📲 Instalar aplicativo</button>
+      <p style="font-size:13px;color:#d6cbe6" id="instalarDica">No Android (Chrome): toque nos 3 pontinhos ⋮ e em <b>"Instalar app"</b> ou <b>"Adicionar à tela inicial"</b>.<br>No iPhone (Safari): toque em <b>Compartilhar</b> e em <b>"Adicionar à Tela de Início"</b>.</p>
+    </div>
+    <div class="box" style="font-size:13px;color:#d6cbe6">📅 Seu catálogo está ativo até <b id="validade" style="color:#5dfc9a"></b></div>
+    <a class="btn ghost" id="linkMestre" href="/mestre.html" style="display:none">👑 Painel mestre</a>
+    <button class="btn ghost" id="sair">Sair</button>
+  </section>
+
+  <!-- PERFUMES -->
+  <section id="per" class="panel">
+    <button class="btn gold cta" id="novoPerf" style="margin-bottom:14px">➕ Adicionar perfume</button>
+    <div class="box"><h3>🧴 Meus perfumes</h3><div id="lista"></div>
+      <p class="note">Esgotou: continua no catálogo com aviso, e o cliente pode pedir para ser avisado. Apagar: some de vez.</p></div>
+  </section>
+
+  <!-- PEDIDOS -->
+  <section id="ped" class="panel">
+    <div class="box"><h3>📦 Pedidos</h3>
+      <p style="font-size:12px;color:var(--mut);margin-bottom:6px">Quando o cliente comprar de verdade, toque em <b style="color:#5dfc9a">✅ Vendeu</b>. A venda conta no perfil da loja.</p>
+      <div id="pedidos"></div></div>
+  </section>
+
+  <!-- PROMOÇÕES -->
+  <section id="pro" class="panel">
+    <div class="box">
+      <h3>🔥 Promoção com contagem regressiva</h3>
+      <label class="chk"><input type="checkbox" id="prOn"> Mostrar promoção no catálogo</label>
+      <label>Texto da promoção</label><input id="prTit" placeholder="Ex.: 20% OFF em todos os doces">
+      <label>Termina em (dia e hora)</label><input type="datetime-local" id="prFim">
+      <button class="btn gold" id="prSalvar" style="margin-top:14px">🔥 Salvar promoção</button>
+      <p class="note">Quando o tempo acaba, a promoção some sozinha.</p>
+    </div>
+    <div class="box">
+      <h3>🎁 Roleta de Prêmios</h3>
+      <label class="chk"><input type="checkbox" id="rpOn"> Mostrar a roleta no perfil</label>
+      <div id="rpLista"></div>
+      <div style="display:flex;gap:8px;margin-top:8px"><input id="rpNovo" maxlength="22" placeholder="Ex.: Brinde surpresa"><button class="mk" id="rpAdd" style="margin:0;padding:0 16px;font-size:16px">+</button></div>
+      <p class="note">De 2 a 8 prêmios. Todas as fatias têm a mesma chance. Só prometa o que pode entregar.</p>
+      <button class="btn gold" id="rpSalvar" style="margin-top:10px">💾 Salvar roleta</button>
+    </div>
+    <div class="box">
+      <h3>🎟️ Conferir código de prêmio</h3>
+      <div style="display:flex;gap:8px"><input id="cpCod" placeholder="PR-XXXXX" style="text-transform:uppercase"><button class="mk b" id="cpBusca" style="margin:0;padding:0 14px">Conferir</button></div>
+      <div id="cpRes" style="margin-top:10px"></div>
+      <h3 style="margin-top:16px">Últimos prêmios</h3><div id="cupons"></div>
+    </div>
+  </section>
+
+  <!-- LOJA -->
+  <section id="loj" class="panel">
+    <div class="box">
+      <h3>🏪 Dados da loja</h3>
+      <label>Nome da loja</label><input id="fNome">
+      <label>WhatsApp que recebe os pedidos (DDD + número)</label><input id="fZap" inputmode="tel" placeholder="97 99999 9999">
+      <label>Frase do topo do catálogo</label><input id="fTitulo">
+      <label>Endereço (ex.: Rua X, 123 — Centro, Fonte Boa – AM)</label><input id="fEnd">
+      <label>Link do Google Maps (opcional)</label><input id="fMaps" placeholder="Cole o link de compartilhar do Maps">
+      <label>Horário (texto que aparece)</label><input id="fHor">
+      <label>Dias abertos</label>
+      <div id="fDias" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <div style="display:flex;gap:8px"><div style="flex:1"><label>Abre às (hora)</label><input id="fAbre" type="number" min="0" max="23"></div><div style="flex:1"><label>Fecha às (hora)</label><input id="fFecha" type="number" min="1" max="24"></div></div>
+      <label>Logo da loja</label><input type="file" id="fLogo" accept="image/*">
+      <label>Foto da frente da loja</label><input type="file" id="fFach" accept="image/*">
+      <button class="btn gold" id="fSalvar" style="margin-top:14px">💾 Salvar dados da loja</button>
+    </div>
+  </section>
+  <p class="rodape">Catálogo digital • feito por GD</p>
+</div>
+
+<!-- Formulário de perfume -->
+<div class="modal" id="modal"><div class="sheet"><div class="sbody">
+  <h2 id="pfTit">Novo perfume</h2>
+  <label>Foto do perfume</label><input type="file" id="pfFoto" accept="image/*">
+  <label class="chk"><input type="checkbox" id="pfEstudio" checked> ✨ Estúdio Mágico (deixa a foto com cara de vitrine)</label>
+  <canvas id="pfPrev" class="prev" style="display:none"></canvas>
+  <img id="pfAtual" class="prev" style="display:none" alt="">
+  <label>Nome</label><input id="pfNome" maxlength="60" placeholder="Ex.: Flor de Cacau">
+  <label>Preço (R$)</label><input id="pfPreco" type="number" step="0.01" min="0" inputmode="decimal" placeholder="89.90">
+  <label>Tipo de cheiro</label>
+  <select id="pfTipo"><option value="doce">🌸 Doce</option><option value="amadeirado">🪵 Amadeirado</option><option value="fresco">🌊 Fresco</option><option value="noturno">🌙 Noturno</option></select>
+  <label>Uma frase sobre o cheiro</label><textarea id="pfDesc" rows="2" maxlength="200" placeholder="Ex.: Chocolate, baunilha e flores brancas."></textarea>
+  <label class="chk"><input type="checkbox" id="pfNovo" checked> Mostrar selo ✨ Novidade</label>
+  <label class="chk"><input type="checkbox" id="pfRoleta" checked> Aparece na Roleta do perfume</label>
+  <button class="btn gold" id="pfSalvar" style="margin-top:10px">✨ Salvar perfume</button>
+  <button class="btn ghost" id="pfCancelar">Cancelar</button>
+</div></div></div>
+
+<script>
+let U = null, L = null, P = [], editId = null, fotoIm = null, PREMIOS = [], deferredPrompt = null, ADMIN = false;
+const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const CORES2 = ["#1fae5b","#e0457f","#2fb3c9","#e09a3a","#5a2fd6","#b03a6e","#8a5428","#2b9fb5"];
+
+function mostra(v) {
+  document.querySelectorAll("section.panel").forEach(s => s.classList.toggle("on", s.id === v));
+  $("tabs").style.display = ["ini", "per", "ped", "pro", "loj"].includes(v) ? "" : "none";
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.dataset.v === v));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => { mostra(t.dataset.v); if (t.dataset.v === "ped") carregaPedidos(); if (t.dataset.v === "ini") carregaStats(); if (t.dataset.v === "pro") carregaCupons(); });
+
+// ===== Autenticação =====
+let modoCriar = false;
+$("lgCriar").onclick = () => { modoCriar = !modoCriar; $("lgTit").textContent = modoCriar ? "✨ Criar conta" : "🔐 Entrar no painel"; $("lgEntrar").textContent = modoCriar ? "Criar minha conta" : "Entrar"; $("lgCriar").textContent = modoCriar ? "Já tenho conta • Entrar" : "Ainda não tenho conta • Criar conta"; $("lgMsg").textContent = ""; };
+$("lgEntrar").onclick = async () => {
+  const email = $("lgEmail").value.trim(), senha = $("lgSenha").value;
+  if (!email || senha.length < 6) { $("lgMsg").textContent = "⚠️ Coloque o e-mail e uma senha com pelo menos 6 caracteres."; return; }
+  $("lgEntrar").disabled = true; $("lgMsg").textContent = "Aguarde...";
+  const r = modoCriar ? await sb.auth.signUp({ email, password: senha }) : await sb.auth.signInWithPassword({ email, password: senha });
+  $("lgEntrar").disabled = false;
+  if (r.error) { $("lgMsg").textContent = "⚠️ " + traduz(r.error.message); return; }
+  if (modoCriar && !r.data.session) { $("lgMsg").textContent = "📧 Conta criada! Abra seu e-mail e confirme o cadastro. Depois volte aqui e entre."; return; }
+  $("lgMsg").textContent = "";
+};
+$("lgEsqueci").onclick = async () => {
+  const email = $("lgEmail").value.trim(); if (!email) { $("lgMsg").textContent = "⚠️ Escreva seu e-mail acima primeiro."; return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + "/painel.html" });
+  $("lgMsg").textContent = error ? "⚠️ " + traduz(error.message) : "📧 Enviamos um link para criar uma nova senha. Olhe seu e-mail (e o spam).";
+};
+$("nsSalvar").onclick = async () => {
+  const s = $("nsSenha").value; if (s.length < 6) return toast("⚠️ Mínimo 6 caracteres");
+  const { error } = await sb.auth.updateUser({ password: s });
+  if (error) return toast("⚠️ " + traduz(error.message));
+  toast("✅ Senha nova salva!"); entrar();
+};
+function traduz(m) {
+  if (/Invalid login/i.test(m)) return "E-mail ou senha errados.";
+  if (/already registered/i.test(m)) return "Esse e-mail já tem conta. Use Entrar.";
+  if (/Email not confirmed/i.test(m)) return "Confirme seu e-mail antes (veja a caixa de entrada e o spam).";
+  if (/rate limit/i.test(m)) return "Muitas tentativas. Espere alguns minutos.";
+  return m;
+}
+$("sair").onclick = $("atSair").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
+sb.auth.onAuthStateChange((ev, sess) => {
+  if (ev === "PASSWORD_RECOVERY") { mostra("vSenha"); return; }
+  if (ev === "SIGNED_IN" && (!U || U.id !== sess.user.id)) { U = sess.user; entrar(); }
+});
+
+async function iniciar() {
+  const { data } = await sb.auth.getSession();
+  if (location.hash.includes("type=recovery")) return;
+  if (data.session) { if (!U) { U = data.session.user; entrar(); } } else mostra("vLogin");
+}
+
+async function entrar() {
+  const { data: adm } = await sb.rpc("is_admin"); ADMIN = !!adm;
+  const { data: lojas } = await sb.from("lojas").select("*").eq("owner_id", U.id).limit(1);
+  if (!lojas || !lojas.length) { if (ADMIN) { location.href = "/mestre.html"; return; } mostra("vAtivar"); return; }
+  L = lojas[0];
+  $("linkMestre").style.display = ADMIN ? "" : "none";
+  $("topNome").textContent = "✦ " + L.nome;
+  mostra("ini"); preencheInicio(); preencheLoja(); preenchePromo(); carregaPerfumes(); carregaStats();
+}
+
+$("atBtn").onclick = async () => {
+  const c = $("atCod").value.trim(); if (!c) return;
+  $("atBtn").disabled = true;
+  const { error } = await sb.rpc("ativar_loja", { p_codigo: c });
+  $("atBtn").disabled = false;
+  if (error) { $("atMsg").textContent = "⚠️ " + error.message; return; }
+  toast("🎉 Loja ativada!"); entrar();
+};
+
+// ===== Início =====
+function linkLoja() { return location.origin + "/" + L.slug; }
+function preencheInicio() {
+  $("linkTxt").textContent = linkLoja(); $("abrirCat").href = linkLoja();
+  $("compartilhar").href = "https://wa.me/?text=" + encodeURIComponent(`✨ Conheça o catálogo da ${L.nome}! Veja os perfumes, gire a roleta de prêmios e peça direto pelo WhatsApp:\n${linkLoja()}`);
+  $("validade").textContent = new Date(L.ativo_ate + "T12:00:00").toLocaleDateString("pt-BR");
+}
+$("copiar").onclick = async () => { try { await navigator.clipboard.writeText(linkLoja()); toast("📋 Link copiado!"); } catch (e) { toast("Segure o dedo no link para copiar"); } };
+async function carregaStats() {
+  if (!L) return;
+  const { data } = await sb.rpc("stats_loja", { p_loja: L.id });
+  if (data) { $("kVis").textContent = data.visitas; $("kPed").textContent = data.pedidos; $("kVen").textContent = data.vendas; $("kGir").textContent = data.giros; $("kRes").textContent = data.resgates; }
+  $("kPer").textContent = P.length;
+  const top = [...P].sort((a, b) => b.cliques - a.cliques).slice(0, 6), max = Math.max(1, ...top.map(p => p.cliques));
+  $("bars").innerHTML = top.length ? top.map(p => `<div style="display:flex;align-items:center;gap:8px;margin:8px 0;font-size:12px"><span style="width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.nome)}</span><div style="flex:1;height:10px;background:#2a2038;border-radius:6px;overflow:hidden"><div style="height:100%;width:${p.cliques / max * 100}%;background:linear-gradient(90deg,var(--gold),#ff7a59)"></div></div><span style="width:30px;text-align:right;color:var(--mut)">${p.cliques}</span></div>`).join("") : `<p class="note">Assim que os clientes abrirem os perfumes, aparece aqui.</p>`;
+}
+
+// ===== Perfumes =====
+async function carregaPerfumes() {
+  const { data } = await sb.from("perfumes").select("*").eq("loja_id", L.id).order("criado_em", { ascending: false });
+  P = data || []; listaPerfumes(); $("kPer").textContent = P.length;
+}
+function listaPerfumes() {
+  $("lista").innerHTML = P.length ? P.map(p => `<div class="ord"><div class="mini" style="background:${TEMAS[p.tipo].bg}">${p.foto_url ? `<img src="${esc(p.foto_url)}" alt="">` : frasco(p.tipo, "l" + p.id.slice(0, 6))}</div>
+    <div style="flex:1;min-width:0"><b>${esc(p.nome)}</b> <span style="color:var(--gold)">${brl(p.preco)}</span><br><span>${p.esgotado ? `⛔ Esgotado${p.avise ? ` • 🔔 ${p.avise} querem ser avisados` : ""}` : "✅ Disponível"} • 🛍️ ${p.vendidos}</span></div>
+    <div style="text-align:right;display:flex;flex-direction:column;gap:2px">
+      <button class="mk b" data-a="edit" data-id="${p.id}">Editar</button>
+      ${p.esgotado ? `<button class="mk" data-a="volta" data-id="${p.id}">Chegou</button>` : `<button class="mk y" data-a="esg" data-id="${p.id}">Esgotou</button>`}
+      <button class="mk r" data-a="del" data-id="${p.id}">Apagar</button></div></div>`).join("") : `<p class="note" style="font-size:13px">Nenhum perfume ainda. Toque em ➕ Adicionar perfume.</p>`;
+}
+let delPend = null;
+$("lista").onclick = async e => {
+  const b = e.target.closest(".mk"); if (!b) return; const p = P.find(x => x.id === b.dataset.id); if (!p) return;
+  if (b.dataset.a === "edit") return abrirForm(p);
+  if (b.dataset.a === "esg" || b.dataset.a === "volta") {
+    const esg = b.dataset.a === "esg";
+    const { error } = await sb.from("perfumes").update(esg ? { esgotado: true } : { esgotado: false, avise: 0 }).eq("id", p.id);
+    if (error) return toast("⚠️ " + error.message);
+    toast(esg ? "⛔ Marcado como esgotado" : "✅ Disponível de novo"); return carregaPerfumes();
+  }
+  if (b.dataset.a === "del") {
+    if (delPend !== p.id) { delPend = p.id; b.textContent = "Confirmar?"; setTimeout(() => { if (delPend === p.id) { delPend = null; b.textContent = "Apagar"; } }, 3000); return; }
+    delPend = null;
+    const { error } = await sb.from("perfumes").delete().eq("id", p.id);
+    if (error) return toast("⚠️ " + error.message);
+    apagaFoto(p.foto_url); toast("🗑️ Perfume apagado"); carregaPerfumes();
+  }
+};
+function caminhoFoto(url) { const m = String(url || "").match(/\/object\/public\/fotos\/(.+)$/); return m ? decodeURIComponent(m[1]) : null; }
+function apagaFoto(url) { const c = caminhoFoto(url); if (c) sb.storage.from("fotos").remove([c]); }
+
+function abrirForm(p) {
+  editId = p ? p.id : null; fotoIm = null;
+  $("pfTit").textContent = p ? "Editar perfume" : "Novo perfume";
+  $("pfFoto").value = ""; $("pfPrev").style.display = "none";
+  $("pfNome").value = p ? p.nome : ""; $("pfPreco").value = p ? p.preco : ""; $("pfTipo").value = p ? p.tipo : "doce";
+  $("pfDesc").value = p ? p.descricao : ""; $("pfNovo").checked = p ? p.novo : true; $("pfRoleta").checked = p ? p.na_roleta : true;
+  if (p && p.foto_url) { $("pfAtual").src = p.foto_url; $("pfAtual").style.display = ""; } else $("pfAtual").style.display = "none";
+  $("modal").classList.add("on");
+}
+$("novoPerf").onclick = () => abrirForm(null);
+$("pfCancelar").onclick = () => $("modal").classList.remove("on");
+$("pfFoto").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { fotoIm = await carregaImagem(f); $("pfAtual").style.display = "none"; desenhaPrev(); } catch (err) { toast("⚠️ " + err.message); }
+};
+$("pfEstudio").onchange = $("pfTipo").onchange = () => { if (fotoIm) desenhaPrev(); };
+function desenhaPrev() {
+  const cv = $("pfPrev"), x = cv.getContext("2d");
+  let src;
+  if ($("pfEstudio").checked) src = estudioMagico(fotoIm, $("pfTipo").value);
+  else { const k = Math.min(1, 1200 / Math.max(fotoIm.width, fotoIm.height)); src = document.createElement("canvas"); src.width = Math.round(fotoIm.width * k); src.height = Math.round(fotoIm.height * k); src.getContext("2d").drawImage(fotoIm, 0, 0, src.width, src.height); }
+  cv.width = src.width; cv.height = src.height; x.drawImage(src, 0, 0); cv.style.display = "";
+}
+$("pfSalvar").onclick = async () => {
+  const nome = $("pfNome").value.trim(), preco = parseFloat(String($("pfPreco").value).replace(",", "."));
+  if (!nome || isNaN(preco)) return toast("⚠️ Preencha nome e preço");
+  const b = $("pfSalvar"); b.disabled = true; b.textContent = "Salvando...";
+  try {
+    const dados = { nome, preco, tipo: $("pfTipo").value, descricao: $("pfDesc").value.trim(), novo: $("pfNovo").checked, na_roleta: $("pfRoleta").checked };
+    let antiga = null;
+    if (fotoIm) {
+      desenhaPrev();
+      const blob = await canvasParaBlob($("pfPrev"), 0.85);
+      const caminho = `${L.id}/${crypto.randomUUID()}.jpg`;
+      const up = await sb.storage.from("fotos").upload(caminho, blob, { contentType: "image/jpeg" });
+      if (up.error) throw up.error;
+      dados.foto_url = sb.storage.from("fotos").getPublicUrl(caminho).data.publicUrl;
+      if (editId) antiga = (P.find(x => x.id === editId) || {}).foto_url;
+    }
+    const r = editId ? await sb.from("perfumes").update(dados).eq("id", editId) : await sb.from("perfumes").insert({ ...dados, loja_id: L.id });
+    if (r.error) throw r.error;
+    if (antiga) apagaFoto(antiga);
+    $("modal").classList.remove("on"); toast("✨ Perfume salvo! Já está no catálogo."); carregaPerfumes();
+  } catch (err) { toast("⚠️ " + (err.message || "Erro ao salvar")); }
+  b.disabled = false; b.textContent = "✨ Salvar perfume";
+};
+
+// ===== Pedidos =====
+async function carregaPedidos() {
+  const { data } = await sb.from("pedidos").select("*").eq("loja_id", L.id).order("criado_em", { ascending: false }).limit(60);
+  const D = data || [];
+  $("pedidos").innerHTML = D.length ? D.map(o => {
+    const p = P.find(x => x.id === o.perfume_id);
+    return `<div class="ord"><div class="mini" style="background:${TEMAS[(p || {}).tipo || "doce"].bg}">${p && p.foto_url ? `<img src="${esc(p.foto_url)}" alt="">` : "🧴"}</div>
+    <div style="flex:1;min-width:0"><b>${esc(o.perfume_nome)}</b><br><span>${esc(o.codigo)} • ${new Date(o.criado_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span></div>
+    <div style="text-align:right"><b class="preco" style="font-size:13px">${brl(o.preco)}</b><br>
+    ${o.status === "novo" ? `<button class="mk" data-id="${o.id}" data-s="vendido">✅ Vendeu</button> <button class="mk n" data-id="${o.id}" data-s="perdido">✖</button>` : o.status === "vendido" ? `<span style="color:#5dfc9a">✅ Vendido</span> <button class="mk n" data-id="${o.id}" data-s="novo">↩</button>` : `<span>✖ Não fechou</span> <button class="mk n" data-id="${o.id}" data-s="novo">↩</button>`}</div></div>`;
+  }).join("") : `<p class="note" style="font-size:13px">Ainda sem pedidos. Divulgue o link da loja! 🚀</p>`;
+}
+$("pedidos").onclick = async e => {
+  const b = e.target.closest(".mk"); if (!b) return;
+  const { error } = await sb.from("pedidos").update({ status: b.dataset.s }).eq("id", b.dataset.id);
+  if (error) return toast("⚠️ " + error.message);
+  if (b.dataset.s === "vendido") toast("🎉 Venda registrada!");
+  carregaPedidos(); carregaPerfumes();
+};
+
+// ===== Promoções e prêmios =====
+function preenchePromo() {
+  $("prOn").checked = L.promo_on; $("prTit").value = L.promo_titulo;
+  if (L.promo_fim) { const f = new Date(L.promo_fim); $("prFim").value = new Date(f - f.getTimezoneOffset() * 6e4).toISOString().slice(0, 16); }
+  $("rpOn").checked = L.premios_on; PREMIOS = [...(L.premios || [])]; listaPremios();
+}
+$("prSalvar").onclick = async () => {
+  const f = new Date($("prFim").value);
+  if ($("prOn").checked && (isNaN(f) || f <= new Date())) return toast("⚠️ Escolha uma data no futuro");
+  const dados = { promo_on: $("prOn").checked, promo_titulo: $("prTit").value.trim() || "Promoção", promo_fim: isNaN(f) ? null : f.toISOString() };
+  const { error } = await sb.from("lojas").update(dados).eq("id", L.id);
+  if (error) return toast("⚠️ " + error.message);
+  Object.assign(L, dados); toast(dados.promo_on ? "🔥 Promoção no ar!" : "Promoção desligada");
+};
+function listaPremios() {
+  $("rpLista").innerHTML = PREMIOS.map((p, i) => `<div class="ord"><i style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${CORES2[i % 8]}"></i><span style="flex:1;font-size:13px;color:#fff">${esc(p)}</span><button class="mk n" data-i="${i}">✖</button></div>`).join("");
+}
+$("rpLista").onclick = e => { const b = e.target.closest(".mk"); if (!b) return; if (PREMIOS.length <= 2) return toast("Mínimo 2 prêmios"); PREMIOS.splice(+b.dataset.i, 1); listaPremios(); };
+$("rpAdd").onclick = () => { const v = $("rpNovo").value.trim(); if (!v) return; if (PREMIOS.length >= 8) return toast("Máximo 8 prêmios"); PREMIOS.push(v.slice(0, 22)); $("rpNovo").value = ""; listaPremios(); };
+$("rpSalvar").onclick = async () => {
+  const dados = { premios_on: $("rpOn").checked, premios: PREMIOS };
+  const { error } = await sb.from("lojas").update(dados).eq("id", L.id);
+  if (error) return toast("⚠️ " + error.message);
+  Object.assign(L, dados); toast("🎁 Roleta salva!");
+};
+async function carregaCupons() {
+  const { data } = await sb.from("cupons").select("*").eq("loja_id", L.id).order("criado_em", { ascending: false }).limit(30);
+  $("cupons").innerHTML = (data || []).length ? data.map(c => `<div class="ord"><div style="flex:1"><b>${esc(c.premio)}</b><br><span>${esc(c.codigo)} • ${new Date(c.criado_em).toLocaleDateString("pt-BR")}</span></div><span>${c.usado ? "✅ usado" : new Date(c.expira_em) < new Date() ? "⌛ vencido" : "🟡 aguardando"}</span></div>`).join("") : `<p class="note">Nenhum giro ainda.</p>`;
+}
+$("cpBusca").onclick = async () => {
+  const c = $("cpCod").value.trim().toUpperCase(); if (!c) return;
+  const { data } = await sb.from("cupons").select("*").eq("loja_id", L.id).eq("codigo", c).maybeSingle();
+  if (!data) { $("cpRes").innerHTML = `<p style="color:#ff8a8a;font-size:14px">❌ Código não encontrado nesta loja.</p>`; return; }
+  const venc = new Date(data.expira_em) < new Date();
+  $("cpRes").innerHTML = `<div class="box" style="margin:0"><b style="font-size:18px">${esc(data.premio)}</b><br><span style="font-size:12px;color:var(--mut)">${esc(data.codigo)} • vence ${new Date(data.expira_em).toLocaleDateString("pt-BR")}</span><br>
+    ${data.usado ? `<p style="color:#ff8a8a;margin-top:8px">⚠️ Esse prêmio JÁ FOI USADO.</p>` : venc ? `<p style="color:#ff8a8a;margin-top:8px">⌛ Esse prêmio venceu.</p>` : `<button class="btn zap" id="cpUsar" style="margin-top:10px">✅ Entregar prêmio e marcar como usado</button>`}</div>`;
+  if ($("cpUsar")) $("cpUsar").onclick = async () => {
+    const { error } = await sb.from("cupons").update({ usado: true }).eq("id", data.id);
+    if (error) return toast("⚠️ " + error.message);
+    toast("🎁 Prêmio entregue!"); $("cpRes").innerHTML = ""; $("cpCod").value = ""; carregaCupons();
+  };
+};
+
+// ===== Dados da loja =====
+function preencheLoja() {
+  $("fNome").value = L.nome; $("fZap").value = fmtZap(L.whatsapp); $("fTitulo").value = L.titulo; $("fEnd").value = L.endereco;
+  $("fMaps").value = L.maps_url; $("fHor").value = L.horario; $("fAbre").value = L.hora_abre; $("fFecha").value = L.hora_fecha;
+  $("fDias").innerHTML = DIAS.map((d, i) => `<label class="chk" style="margin:4px 6px 4px 0"><input type="checkbox" value="${i}" ${L.dias_abertos.includes(i) ? "checked" : ""}> ${d}</label>`).join("");
+}
+$("fSalvar").onclick = async () => {
+  const z = zapNormal($("fZap").value);
+  if (!/^55\d{10,11}$/.test(z)) return toast("⚠️ WhatsApp inválido: use DDD + número");
+  const b = $("fSalvar"); b.disabled = true; b.textContent = "Salvando...";
+  try {
+    const dados = { nome: $("fNome").value.trim() || L.nome, whatsapp: z, titulo: $("fTitulo").value.trim() || L.titulo, endereco: $("fEnd").value.trim(), maps_url: $("fMaps").value.trim(), horario: $("fHor").value.trim(),
+      dias_abertos: [...$("fDias").querySelectorAll("input:checked")].map(i => +i.value), hora_abre: +$("fAbre").value || 0, hora_fecha: +$("fFecha").value || 24 };
+    for (const [campo, inp, max] of [["logo_url", "fLogo", 600], ["fachada_url", "fFach", 1400]]) {
+      const f = $(inp).files[0]; if (!f) continue;
+      const blob = await comprimir(f, max), caminho = `${L.id}/${campo}-${Date.now()}.jpg`;
+      const up = await sb.storage.from("fotos").upload(caminho, blob, { contentType: "image/jpeg" });
+      if (up.error) throw up.error;
+      if (L[campo]) apagaFoto(L[campo]);
+      dados[campo] = sb.storage.from("fotos").getPublicUrl(caminho).data.publicUrl; $(inp).value = "";
+    }
+    const { error } = await sb.from("lojas").update(dados).eq("id", L.id);
+    if (error) throw error;
+    Object.assign(L, dados); $("topNome").textContent = "✦ " + L.nome; preencheInicio(); toast("✅ Dados da loja salvos!");
+  } catch (err) { toast("⚠️ " + (err.message || "Erro")); }
+  b.disabled = false; b.textContent = "💾 Salvar dados da loja";
+};
+
+// ===== App instalável =====
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferredPrompt = e; $("instalar").style.display = ""; });
+$("instalar").onclick = async () => { if (!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; $("instalar").style.display = "none"; };
+if (matchMedia("(display-mode: standalone)").matches) $("instalarBox").style.display = "none";
+
+iniciar();
+</script>
+</body>
+</html>

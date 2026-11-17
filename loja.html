@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catálogo</title>
+<meta name="theme-color" content="#0b0710">
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/estilo.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/comum.js"></script>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="centro" id="carregando"><div style="font-size:40px">✦</div><div style="color:var(--mut)">Abrindo a vitrine...</div></div>
+</div>
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+
+<script>
+const CORES2 = ["#1fae5b","#e0457f","#2fb3c9","#e09a3a","#5a2fd6","#b03a6e","#8a5428","#2b9fb5"];
+let L = null, P = [], filtro = "todos", R1 = { rot: 0 }, R2 = { rot: 0 }, girando = false, girando2 = false, RODA = [];
+
+function slugAtual() {
+  const q = new URLSearchParams(location.search).get("l");
+  if (q) return q.toLowerCase();
+  return decodeURIComponent(location.pathname.split("/").filter(Boolean)[0] || "").toLowerCase();
+}
+
+function indisponivel(msg) {
+  $("app").innerHTML = `<div class="centro"><div style="font-size:46px">🕯️</div><h2 style="font-family:'Cormorant Garamond',serif;font-size:28px">${msg}</h2><p style="color:var(--mut);font-size:14px">Fale com a loja pelo Instagram ou WhatsApp.</p></div>`;
+}
+
+async function iniciar() {
+  const slug = slugAtual();
+  if (!slug) return indisponivel("Catálogo não encontrado");
+  const { data: loja, error } = await sb.from("lojas").select("*").eq("slug", slug).maybeSingle();
+  if (error || !loja) return indisponivel("Catálogo indisponível");
+  L = loja;
+  if (new Date(L.ativo_ate + "T23:59:59") < new Date()) return indisponivel("Catálogo indisponível no momento");
+  const { data: perf } = await sb.from("perfumes").select("*").eq("loja_id", L.id).order("criado_em", { ascending: false });
+  P = perf || [];
+  document.title = L.nome + " — Catálogo";
+  montar();
+  try { if (!sessionStorage.getItem("v_" + L.id)) { sessionStorage.setItem("v_" + L.id, "1"); sb.rpc("registrar_visita", { p_loja: L.id }); } } catch (e) {}
+  carregarStats();
+  const h = location.hash.match(/^#p-(.+)$/); if (h && P.find(p => p.id === h[1])) abrir(h[1]);
+}
+
+async function carregarStats() {
+  const { data } = await sb.rpc("stats_publicas", { p_loja: L.id });
+  if (data) { $("sPerf").textContent = data.perfumes; $("sVend").textContent = data.vendas; $("sVis").textContent = data.visitas; }
+}
+
+function mapsHref() {
+  return /^https?:\/\//.test(L.maps_url) ? L.maps_url : "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(L.endereco || L.nome);
+}
+
+function montar() {
+  const ab = lojaAberta(L);
+  $("app").innerHTML = `
+  <div class="top">
+    <div class="logo">✦ ${esc(L.nome)}</div>
+    <div class="tabs"><button class="tab on" data-v="per">Perfil</button><button class="tab" data-v="cat">Catálogo</button></div>
+  </div>
+  <section id="per" class="panel on">
+    <div class="cover" id="cover"></div>
+    <div class="pcard">
+      <div class="avatar"><div>${L.logo_url ? `<img src="${esc(L.logo_url)}" alt="">` : esc(iniciais(L.nome))}</div></div>
+      <div class="pname">${esc(L.nome)}</div>
+      <div class="psub">Perfumaria${L.endereco ? " • " + esc(L.endereco.split("—").pop().trim()) : ""}</div>
+      <span class="aberto${ab ? "" : " f"}">${ab ? "🟢 Aberto agora" : "🔴 Fechado agora"}</span>
+      <div class="stats"><div><b id="sPerf">${P.length}</b><span>perfumes</span></div><div><b id="sVend">–</b><span>vendas</span></div><div><b id="sVis">–</b><span>visitas</span></div></div>
+      <div class="acts">
+        <a class="btn zap" href="${waLink(L.whatsapp, "Olá! Vi o catálogo da loja e quero tirar uma dúvida.")}" target="_blank" rel="noopener">💬 WhatsApp</a>
+        <a class="btn mapa" href="${mapsHref()}" target="_blank" rel="noopener">🧭 Como chegar</a>
+      </div>
+      <div class="promo pr" style="margin-top:12px">🔥 <span class="prT"></span> termina em <b class="cdv">--</b></div>
+    </div>
+    <div class="stories" id="stories"></div>
+    <div id="featSec"><div class="sec">🔥 O mais pedido</div><div class="feat" id="feat"></div></div>
+    <div id="r1Sec"><div class="sec">🎡 Roleta do perfume</div>
+    <div class="roleta">
+      <div style="font-size:13px;color:#d6cbe6">Não sabe qual escolher? Gire e descubra o seu.</div>
+      <div class="wwrap"><div class="pin"></div><div class="wheel" id="wheel"></div><div class="hub">✦</div></div>
+      <button class="btn gold cta" id="girar">🎡 GIRAR A ROLETA</button>
+      <div class="res" id="res"></div>
+    </div></div>
+    <div id="r2Sec"><div class="sec">🎁 Roleta de Prêmios</div>
+    <div class="roleta">
+      <div style="font-size:13px;color:#d6cbe6">Gire <b style="color:#5dfc9a">grátis</b> e ganhe um presente da loja. Toda fatia é prêmio!</div>
+      <div class="wwrap"><div class="pin"></div><div class="wheel" id="wheel2" style="border-color:#5dfc9a;box-shadow:0 0 30px -6px #5dfc9a"></div><div class="hub">🎁</div></div>
+      <button class="btn cta" id="girar2" style="background:linear-gradient(135deg,#5dfc9a,#1fae5b);color:#0b2414">🎁 GIRAR GRÁTIS</button>
+      <div class="res" id="res2"></div>
+      <p class="note">1 giro grátis por semana • prêmio válido por 7 dias • sem compra obrigatória para girar</p>
+    </div></div>
+    <button class="btn gold cta" id="verTodos" style="margin-top:18px">✨ Ver todos os perfumes</button>
+    ${blocoLoja()}
+  </section>
+  <section id="cat" class="panel">
+    <div class="hero" id="hero">
+      <h1>${esc(L.titulo)}</h1>
+      <p>Escolha sua fragrância, toque e peça direto no WhatsApp.</p>
+      <div class="promo pr">🔥 <span class="prT"></span> termina em <b class="cdv">--</b></div>
+    </div>
+    <div class="onde" id="irLoja">📍 ${esc(L.endereco ? L.endereco.split("—").pop().trim() : "Nossa loja")} • ver a loja</div>
+    <div class="chips" id="chips"></div>
+    <div class="grid" id="grid"></div>
+    ${P.length ? "" : `<p class="note" style="font-size:14px;margin-top:20px">Em breve, novos perfumes por aqui ✨</p>`}
+  </section>
+  <p class="rodape">Catálogo digital • feito por GD</p>`;
+  for (const id of ["cover", "hero"]) { const el = $(id); for (let i = 0; i < 16; i++) { const s = document.createElement("i"); s.className = "spark"; s.style.left = Math.random() * 100 + "%"; s.style.top = Math.random() * 100 + "%"; s.style.animationDelay = Math.random() * 6 + "s"; el.appendChild(s); } }
+  document.querySelectorAll(".tab").forEach(t => t.onclick = () => irPara(t.dataset.v));
+  $("verTodos").onclick = () => { filtro = "todos"; chips(); grid(); irPara("cat"); };
+  $("irLoja").onclick = () => { irPara("per"); setTimeout(() => $("loja").scrollIntoView({ behavior: "smooth" }), 50); };
+  $("modal").onclick = e => { if (e.target.id === "modal") fechar(); };
+  $("girar").onclick = girar1; $("girar2").onclick = girar2;
+  stories(); chips(); grid(); destaque(); roda1(); roda2(); cd(); setInterval(cd, 1000);
+}
+
+function blocoLoja() {
+  return `<div class="loja" id="loja">
+    <div class="fach">${L.fachada_url ? `<img src="${esc(L.fachada_url)}" alt="Frente da loja">` : `<div style="font-size:60px">🏪</div>`}<span class="tag">🏪 Loja física</span></div>
+    <div class="lbody"><h3>Conheça nossa loja</h3>
+      ${L.endereco ? `<div class="lrow">📍 <span>${esc(L.endereco)}</span></div>` : ""}
+      <div class="lrow">🕗 <span>${esc(L.horario)}</span></div>
+      <a class="btn mapa" style="margin-top:12px" href="${mapsHref()}" target="_blank" rel="noopener">🧭 Como chegar — abre o Google Maps</a>
+      <p class="note">O Google Maps traça a rota de onde você está até a loja.</p>
+    </div></div>`;
+}
+
+function irPara(v) {
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x.dataset.v === v));
+  document.querySelectorAll("section.panel").forEach(s => s.classList.toggle("on", s.id === v));
+  window.scrollTo(0, 0);
+}
+
+const disponiveis = () => P.filter(p => !p.esgotado);
+function top1() { const d = disponiveis(); if (!d.length) return null; return d.reduce((a, b) => (b.vendidos * 5 + b.cliques) > (a.vendidos * 5 + a.cliques) ? b : a); }
+
+function stories() {
+  $("stories").innerHTML = Object.entries(TEMAS).filter(([k]) => P.some(p => p.tipo === k)).map(([k, t]) => `<div class="story" data-f="${k}"><i style="background:${t.bg}">${t.n.split(" ")[0]}</i>${t.n.split(" ")[1]}</div>`).join("");
+  $("stories").onclick = e => { const s = e.target.closest(".story"); if (!s) return; filtro = s.dataset.f; chips(); grid(); irPara("cat"); };
+}
+function chips() {
+  const opts = [["todos", "✨ Todos"], ...Object.entries(TEMAS).filter(([k]) => P.some(p => p.tipo === k)).map(([k, v]) => [k, v.n])];
+  $("chips").innerHTML = opts.map(([k, n]) => `<button class="chip ${filtro === k ? "on" : ""}" data-f="${k}">${n}</button>`).join("");
+  $("chips").onclick = e => { const b = e.target.closest(".chip"); if (!b) return; filtro = b.dataset.f; chips(); grid(); };
+}
+function grid() {
+  const t = top1();
+  $("grid").innerHTML = P.filter(p => filtro === "todos" || p.tipo === filtro).map((p, i) => {
+    const T = TEMAS[p.tipo];
+    const bd = p.esgotado ? `<span class="badge esg">⛔ Esgotado</span>` : t && p.id === t.id && (t.vendidos + t.cliques) > 0 ? `<span class="badge hot">🔥 Mais pedido</span>` : p.novo ? `<span class="badge">✨ Novidade</span>` : "";
+    return `<div class="card${p.esgotado ? " esg" : ""}" data-id="${p.id}" style="animation-delay:${i * 60}ms">${bd}
+      <div class="scene" style="background:${T.bg}">${visual(p)}</div>
+      <div class="info"><div class="nome">${esc(p.nome)}</div><div class="tipo">${T.n}</div><div class="preco">${brl(p.preco)}</div>${p.vendidos ? `<div class="vd">🛍️ ${p.vendidos} vendido${p.vendidos > 1 ? "s" : ""}</div>` : ""}</div></div>`;
+  }).join("");
+  $("grid").onclick = e => { const c = e.target.closest(".card"); if (c) abrir(c.dataset.id); };
+}
+function destaque() {
+  const t = top1();
+  if (!t) { $("featSec").style.display = "none"; return; }
+  $("feat").innerHTML = `<div class="scene" style="background:${TEMAS[t.tipo].bg}">${visual(t)}</div><span class="badge hot" style="top:12px;left:12px">🔥 Destaque</span><div class="ov"><b>${esc(t.nome)}</b><span class="preco">${brl(t.preco)}</span> • toque para ver</div>`;
+  $("feat").onclick = () => abrir(t.id);
+}
+
+function linkPerfume(p) { return `${location.origin}/p/${p.id}`; }
+
+function abrir(id) {
+  const p = P.find(x => x.id === id); if (!p) return;
+  const T = TEMAS[p.tipo];
+  sb.rpc("abrir_perfume", { p_perfume: p.id });
+  $("sheet").innerHTML = `<div class="scene" style="background:${T.bg}">${visual(p)}</div>
+   <div class="sbody"><div class="tipo">${T.n}${p.esgotado ? " • ⛔ Esgotado" : ""}</div><h2>${esc(p.nome)}</h2>${p.descricao ? `<p>${esc(p.descricao)}</p>` : "<p></p>"}
+   <div class="preco" style="font-size:24px;margin-bottom:14px">${brl(p.preco)}</div>
+   ${p.esgotado
+      ? `<button class="btn zap" id="pedir" style="background:linear-gradient(135deg,#e09a3a,#b8892e)">🔔 Me avise quando chegar</button>`
+      : `<button class="btn zap" id="pedir">💬 Pedir no WhatsApp</button>`}
+   <button class="btn ghost" id="fechar">Voltar ao catálogo</button></div>`;
+  $("modal").classList.add("on");
+  history.replaceState(null, "", "#p-" + p.id);
+  $("fechar").onclick = fechar;
+  $("pedir").onclick = async () => {
+    const b = $("pedir"); b.disabled = true; b.textContent = "Abrindo o WhatsApp...";
+    let texto;
+    if (p.esgotado) {
+      await sb.rpc("avisar_quando_chegar", { p_perfume: p.id });
+      texto = `Olá! Vi que o perfume *${p.nome}* está esgotado. Me avisa quando chegar? 🔔\n📸 ${linkPerfume(p)}`;
+    } else {
+      const { data: cod } = await sb.rpc("registrar_pedido", { p_perfume: p.id });
+      texto = `Olá! Quero este perfume do catálogo:\n\n🧴 *${p.nome}* — ${brl(p.preco)}\n🔖 Pedido ${cod || ""}\n📸 ${linkPerfume(p)}\n\nAinda tem?`;
+    }
+    location.href = waLink(L.whatsapp, texto);
+    setTimeout(() => { b.disabled = false; b.textContent = p.esgotado ? "🔔 Me avise quando chegar" : "💬 Pedir no WhatsApp"; }, 3000);
+  };
+}
+function fechar() { $("modal").classList.remove("on"); history.replaceState(null, "", location.pathname + location.search); }
+
+// Roleta do perfume
+function roda1() {
+  if (girando) return;
+  RODA = disponiveis().filter(p => p.na_roleta).slice(0, 6);
+  if (RODA.length < 2) { $("r1Sec").style.display = "none"; return; }
+  desenhaRoleta($("wheel"), RODA.map(p => p.nome), RODA.map(p => TEMAS[p.tipo].b));
+}
+function girar1() {
+  if (girando || RODA.length < 2) return; girando = true;
+  const k = Math.floor(Math.random() * RODA.length);
+  giraRoleta($("wheel"), R1, k, RODA.length); $("res").textContent = "Girando... ✨";
+  setTimeout(() => { girando = false; const p = RODA[k]; $("res").innerHTML = `🎉 O seu é <b>${esc(p.nome)}</b>!`; setTimeout(() => abrir(p.id), 700); }, 4300);
+}
+
+// Roleta de prêmios (o servidor sorteia)
+let MEU = null;
+function chaveMeu() { return "premio_" + L.id; }
+function lerMeu() { try { MEU = JSON.parse(localStorage.getItem(chaveMeu()) || "null"); } catch (e) { MEU = null; } }
+function salvaMeu() { try { MEU ? localStorage.setItem(chaveMeu(), JSON.stringify(MEU)) : localStorage.removeItem(chaveMeu()); } catch (e) {} }
+function roda2() {
+  if (!L.premios_on || (L.premios || []).length < 2) { $("r2Sec").style.display = "none"; return; }
+  desenhaRoleta($("wheel2"), L.premios, CORES2); lerMeu(); mostraMeu();
+}
+function mostraMeu() {
+  const r = $("res2");
+  if (!MEU) { r.innerHTML = ""; return; }
+  const dias = Math.ceil((MEU.t + 7 * 864e5 - Date.now()) / 864e5);
+  if (dias <= 0) { MEU = null; salvaMeu(); r.innerHTML = ""; return; }
+  r.innerHTML = `🎉 Seu prêmio: <b>${esc(MEU.p)}</b><br><span style="font-size:12px;color:var(--mut)">Código ${esc(MEU.c)} • válido por mais ${dias} dia${dias > 1 ? "s" : ""}</span>
+    <a class="btn zap" id="resgatar" style="margin-top:10px" href="${waLink(L.whatsapp, `Olá! Ganhei *${MEU.p}* na Roleta de Prêmios do catálogo 🎁\nCódigo: ${MEU.c}\nQuero usar!`)}" target="_blank" rel="noopener">💬 Resgatar no WhatsApp</a>`;
+  $("resgatar").onclick = () => sb.rpc("registrar_resgate", { p_loja: L.id });
+}
+async function girar2() {
+  if (girando2) return;
+  if (MEU) { $("res2").scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+  girando2 = true; $("res2").textContent = "Girando... 🍀";
+  const { data, error } = await sb.rpc("girar_premio", { p_loja: L.id });
+  if (error || !data) { girando2 = false; $("res2").textContent = "A roleta está descansando. Tente mais tarde."; return; }
+  giraRoleta($("wheel2"), R2, data.indice, L.premios.length);
+  setTimeout(() => { girando2 = false; MEU = { p: data.premio, c: data.codigo, t: Date.now() }; salvaMeu(); mostraMeu(); }, 4300);
+}
+
+// Promoção
+function cd() {
+  const fim = L.promo_fim ? new Date(L.promo_fim) : null;
+  let d = fim ? Math.floor((fim - new Date()) / 1000) : 0; const ativa = L.promo_on && d > 0;
+  document.querySelectorAll(".pr").forEach(e => e.style.display = ativa ? "" : "none"); if (!ativa) return;
+  const dd = Math.floor(d / 86400), h = Math.floor(d % 86400 / 3600), m = Math.floor(d % 3600 / 60), s = d % 60;
+  const t = (dd ? dd + "d " : "") + `${p2(h)}:${p2(m)}:${p2(s)}`;
+  document.querySelectorAll(".cdv").forEach(e => e.textContent = t);
+  document.querySelectorAll(".prT").forEach(e => e.textContent = L.promo_titulo);
+}
+
+iniciar();
+</script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel Mestre — GD</title>
+<meta name="theme-color" content="#0b0710">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/estilo.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/comum.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><div class="logo">👑 Painel Mestre</div><a class="tab" href="/painel.html">Painel da loja</a></div>
+
+  <section id="vLogin" class="panel">
+    <div class="box" style="max-width:420px;margin:30px auto">
+      <h3>🔐 Entrar como mestre</h3>
+      <label>E-mail</label><input id="lgEmail" type="email">
+      <label>Senha</label><input id="lgSenha" type="password">
+      <button class="btn gold" id="lgEntrar" style="margin-top:14px">Entrar</button>
+      <p class="note">Ainda sem conta? Crie em <a href="/painel.html" style="color:var(--gold)">/painel.html</a> e peça a liberação de mestre.</p>
+      <p class="note" id="lgMsg"></p>
+    </div>
+  </section>
+
+  <section id="vNega" class="panel"><div class="centro"><div style="font-size:46px">⛔</div><p>Esta conta não é de mestre.</p><button class="btn ghost" id="sair1">Sair</button></div></section>
+
+  <section id="vApp" class="panel">
+    <div class="kpis"><div class="kpi"><b id="tLojas">0</b><span>lojas</span></div><div class="kpi"><b id="tAtivas">0</b><span>ativas</span></div><div class="kpi"><b id="tVendas">0</b><span>vendas das lojas</span></div></div>
+    <div class="box">
+      <h3>➕ Nova loja</h3>
+      <label>Nome da loja</label><input id="nNome" placeholder="Ex.: Essência Rara">
+      <label>Endereço do link (só letras minúsculas, números e -)</label><input id="nSlug" placeholder="essencia-rara">
+      <p class="note" style="text-align:left" id="nLink"></p>
+      <label>WhatsApp da loja</label><input id="nZap" inputmode="tel" placeholder="97 99999 9999">
+      <button class="btn gold" id="nCriar" style="margin-top:14px">👑 Criar loja e gerar código</button>
+      <div id="nRes"></div>
+    </div>
+    <div class="box"><h3>🏪 Minhas lojas</h3><div id="lojas"></div></div>
+    <button class="btn ghost" id="sair2">Sair</button>
+  </section>
+</div>
+<script>
+let LS = [];
+function mostra(v) { document.querySelectorAll("section.panel").forEach(s => s.classList.toggle("on", s.id === v)); }
+function slugify(t) { return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40); }
+$("nNome").oninput = () => { $("nSlug").value = slugify($("nNome").value); mostraLink(); };
+$("nSlug").oninput = mostraLink;
+function mostraLink() { $("nLink").textContent = "Link: " + location.origin + "/" + ($("nSlug").value || "..."); }
+$("sair1").onclick = $("sair2").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
+$("lgEntrar").onclick = async () => {
+  const { error } = await sb.auth.signInWithPassword({ email: $("lgEmail").value.trim(), password: $("lgSenha").value });
+  if (error) { $("lgMsg").textContent = "⚠️ " + error.message; return; }
+  iniciar();
+};
+
+async function iniciar() {
+  const { data } = await sb.auth.getSession();
+  if (!data.session) return mostra("vLogin");
+  const { data: adm } = await sb.rpc("is_admin");
+  if (!adm) return mostra("vNega");
+  mostra("vApp"); carrega();
+}
+
+async function carrega() {
+  const { data, error } = await sb.rpc("admin_lojas");
+  if (error) return toast("⚠️ " + error.message);
+  LS = data || [];
+  const hoje = new Date().toISOString().slice(0, 10);
+  $("tLojas").textContent = LS.length; $("tAtivas").textContent = LS.filter(l => l.ativo_ate >= hoje).length;
+  $("tVendas").textContent = LS.reduce((s, l) => s + Number(l.vendas), 0);
+  $("lojas").innerHTML = LS.length ? LS.map(l => {
+    const ativa = l.ativo_ate >= hoje, dias = Math.ceil((new Date(l.ativo_ate + "T23:59:59") - new Date()) / 864e5);
+    return `<div class="box" style="background:#0f0a17">
+      <b style="font-size:16px">${esc(l.nome)}</b> <span style="font-size:11px;color:${ativa ? "#5dfc9a" : "#ff8a8a"}">${ativa ? `● ativa (${dias} dias)` : "● desativada"}</span><br>
+      <a href="/${esc(l.slug)}" target="_blank" style="font-size:12px;color:var(--gold)">${location.origin}/${esc(l.slug)}</a><br>
+      <span style="font-size:12px;color:var(--mut)">📱 ${esc(fmtZap(l.whatsapp))} • válida até ${new Date(l.ativo_ate + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+      <div style="display:flex;justify-content:space-around;margin:10px 0;font-size:12px;text-align:center"><div><b style="color:var(--gold);font-size:16px">${l.perfumes}</b><br>perfumes</div><div><b style="color:var(--gold);font-size:16px">${l.visitas}</b><br>visitas</div><div><b style="color:var(--gold);font-size:16px">${l.pedidos}</b><br>pedidos</div><div><b style="color:var(--gold);font-size:16px">${l.vendas}</b><br>vendas</div></div>
+      ${l.ativada ? `<p style="font-size:12px;color:#5dfc9a">✅ A dona já ativou o painel</p>` : `<p style="font-size:13px">🗝️ Código de ativação: <b style="letter-spacing:3px;color:var(--gold);font-size:16px">${esc(l.codigo || "—")}</b></p>
+        <a class="mk" style="display:inline-block;text-decoration:none" target="_blank" href="${waLink(l.whatsapp, msgAtivacao(l))}">💬 Mandar código pra dona</a>`}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+        <button class="mk" data-a="ano" data-id="${l.id}">+1 ano</button>
+        <button class="mk y" data-a="mes" data-id="${l.id}">+30 dias</button>
+        ${ativa ? `<button class="mk r" data-a="off" data-id="${l.id}">Desativar</button>` : ""}
+        <button class="mk n" data-a="cod" data-id="${l.id}">Novo código</button>
+      </div></div>`;
+  }).join("") : `<p class="note">Nenhuma loja ainda.</p>`;
+}
+function msgAtivacao(l) {
+  return `Oi! Seu catálogo *${l.nome}* está pronto ✨\n\n1️⃣ Abra: ${location.origin}/painel.html\n2️⃣ Toque em "Criar conta" e cadastre seu e-mail e uma senha\n3️⃣ Digite o código de ativação: *${l.codigo}*\n\nPronto! Aí é só adicionar seus perfumes. O link da sua loja é:\n${location.origin}/${l.slug}`;
+}
+$("lojas").onclick = async e => {
+  const b = e.target.closest("button.mk"); if (!b) return; const l = LS.find(x => x.id === b.dataset.id); if (!l) return;
+  if (b.dataset.a === "cod") {
+    if (b.textContent !== "Confirmar?") { b.textContent = "Confirmar?"; return; }
+    const { error } = await sb.rpc("admin_novo_codigo", { p_loja: l.id }); if (error) return toast("⚠️ " + error.message);
+    toast("🗝️ Novo código gerado (a conta antiga foi desligada)"); return carrega();
+  }
+  let ate;
+  const base = new Date(Math.max(Date.now(), new Date(l.ativo_ate + "T12:00:00").getTime()));
+  if (b.dataset.a === "ano") { base.setFullYear(base.getFullYear() + 1); ate = base; }
+  else if (b.dataset.a === "mes") { base.setDate(base.getDate() + 30); ate = base; }
+  else { if (b.textContent !== "Confirmar?") { b.textContent = "Confirmar?"; return; } ate = new Date(Date.now() - 864e5); }
+  const { error } = await sb.rpc("admin_validade", { p_loja: l.id, p_ate: ate.toISOString().slice(0, 10) });
+  if (error) return toast("⚠️ " + error.message);
+  toast("✅ Validade atualizada"); carrega();
+};
+$("nCriar").onclick = async () => {
+  const nome = $("nNome").value.trim(), slug = $("nSlug").value.trim(), zap = zapNormal($("nZap").value);
+  if (!nome || !/^[a-z0-9-]{3,40}$/.test(slug)) return toast("⚠️ Nome e link válidos, por favor");
+  if (!/^55\d{10,11}$/.test(zap)) return toast("⚠️ WhatsApp inválido");
+  const { data, error } = await sb.rpc("admin_criar_loja", { p_nome: nome, p_slug: slug, p_whatsapp: zap });
+  if (error) return toast("⚠️ " + (/duplicate|unique/i.test(error.message) ? "Esse link já existe, escolha outro." : error.message));
+  $("nRes").innerHTML = `<div class="box" style="margin-top:12px;background:#0f0a17"><p>🎉 Loja criada!</p><p style="font-size:14px">Código de ativação: <b style="letter-spacing:3px;color:var(--gold);font-size:20px">${esc(data.codigo)}</b></p></div>`;
+  $("nNome").value = $("nSlug").value = $("nZap").value = ""; carrega();
+};
+iniciar();
+</script>
+</body>
+</html>
