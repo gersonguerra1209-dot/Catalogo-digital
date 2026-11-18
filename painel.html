@@ -15,6 +15,8 @@
 <link rel="stylesheet" href="/estilo.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/comum.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -150,6 +152,15 @@
       <label>Logo da loja</label><input type="file" id="fLogo" accept="image/*">
       <label>Foto da frente da loja</label><input type="file" id="fFach" accept="image/*">
       <button class="btn gold" id="fSalvar" style="margin-top:14px">💾 Salvar dados da loja</button>
+    </div>
+    <div class="box">
+      <h3>📍 Localização da loja no mapa</h3>
+      <p style="font-size:12px;color:#d6cbe6;line-height:1.5">Funciona mesmo se a loja não aparece no Google Maps ou se você vende em casa. <b>Toque no mapa</b> no lugar exato da loja, ou use o botão abaixo <b>estando na loja</b>.</p>
+      <button class="btn mapa" id="gpsBtn" type="button" style="margin-top:10px;padding:11px;font-size:13px">📡 Usar minha localização agora</button>
+      <div id="mapa" style="height:300px;border-radius:14px;margin-top:10px;z-index:0"></div>
+      <p class="note" id="geoTxt"></p>
+      <button class="btn gold" id="geoSalvar" style="margin-top:10px">📍 Salvar localização</button>
+      <button class="btn ghost" id="geoTirar">Tirar a marcação</button>
     </div>
     <div class="box">
       <h3>🎵 Música da vitrine</h3>
@@ -483,6 +494,48 @@ $("mTirar").onclick = async () => {
   const { error } = await sb.from("lojas").update({ musica_url: "" }).eq("id", L.id);
   if (error) return toast("⚠️ " + error.message);
   apagaMus(L.musica_url); L.musica_url = ""; $("musAtual").textContent = nomeMus(""); toast("Música retirada");
+};
+// ===== Localização no mapa =====
+let MAPA = null, PINO = null, GEO = null;
+const FONTE_BOA = [-2.5143, -66.0917];
+function geoTxt() { $("geoTxt").textContent = GEO ? `📍 Marcado: ${GEO.lat.toFixed(5)}, ${GEO.lng.toFixed(5)}` : "Nenhum ponto marcado ainda."; }
+function poePino(lat, lng, zoom) {
+  GEO = { lat, lng };
+  if (!PINO) PINO = L_.marker([lat, lng], { draggable: true }).addTo(MAPA).on("dragend", e => { const p = e.target.getLatLng(); GEO = { lat: p.lat, lng: p.lng }; geoTxt(); });
+  else PINO.setLatLng([lat, lng]);
+  if (zoom) MAPA.setView([lat, lng], zoom);
+  geoTxt();
+}
+const L_ = window.L;
+function abreMapa() {
+  if (!L_ || MAPA) { if (MAPA) setTimeout(() => MAPA.invalidateSize(), 50); return; }
+  const tem = L.lat != null && L.lng != null;
+  MAPA = L_.map("mapa").setView(tem ? [L.lat, L.lng] : FONTE_BOA, tem ? 17 : 14);
+  L_.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(MAPA);
+  if (tem) poePino(L.lat, L.lng); else geoTxt();
+  MAPA.on("click", e => poePino(e.latlng.lat, e.latlng.lng));
+  setTimeout(() => MAPA.invalidateSize(), 100);
+}
+document.querySelector('.tab[data-v="loj"]').addEventListener("click", () => setTimeout(abreMapa, 60));
+$("gpsBtn").onclick = () => {
+  if (!navigator.geolocation) return toast("⚠️ Este celular não libera a localização");
+  $("gpsBtn").textContent = "📡 Procurando...";
+  navigator.geolocation.getCurrentPosition(p => {
+    abreMapa(); poePino(p.coords.latitude, p.coords.longitude, 18);
+    $("gpsBtn").textContent = "📡 Usar minha localização agora";
+    toast(p.coords.accuracy > 60 ? "📍 Achei! Confira e arraste o pino se precisar" : "📍 Localização encontrada!");
+  }, () => { $("gpsBtn").textContent = "📡 Usar minha localização agora"; toast("⚠️ Libere a localização no celular e tente de novo"); }, { enableHighAccuracy: true, timeout: 15000 });
+};
+$("geoSalvar").onclick = async () => {
+  if (!GEO) return toast("⚠️ Toque no mapa para marcar a loja");
+  const { error } = await sb.from("lojas").update({ lat: GEO.lat, lng: GEO.lng }).eq("id", L.id);
+  if (error) return toast("⚠️ " + error.message);
+  L.lat = GEO.lat; L.lng = GEO.lng; toast("📍 Localização salva! O 'Como chegar' já leva até aqui.");
+};
+$("geoTirar").onclick = async () => {
+  const { error } = await sb.from("lojas").update({ lat: null, lng: null }).eq("id", L.id);
+  if (error) return toast("⚠️ " + error.message);
+  L.lat = L.lng = null; GEO = null; if (PINO) { MAPA.removeLayer(PINO); PINO = null; } geoTxt(); toast("Marcação retirada");
 };
 function preencheLoja() {
   $("fSpot").value = L.spotify_url || ""; $("musAtual").textContent = nomeMus(L.musica_url);

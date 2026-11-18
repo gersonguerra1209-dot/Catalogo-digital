@@ -53,8 +53,15 @@ async function carregarStats() {
   if (data) { $("sPerf").textContent = data.perfumes; $("sVend").textContent = data.vendas; $("sVis").textContent = data.visitas; }
 }
 
+const temGeo = () => L.lat != null && L.lng != null;
 function mapsHref() {
+  if (temGeo()) return `https://www.google.com/maps/dir/?api=1&destination=${L.lat},${L.lng}`;
   return /^https?:\/\//.test(L.maps_url) ? L.maps_url : "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(L.endereco || L.nome);
+}
+function mapaEmbed() {
+  if (!temGeo()) return "";
+  const d = 0.004, bb = [L.lng - d, L.lat - d * 0.7, L.lng + d, L.lat + d * 0.7].join(",");
+  return `<iframe src="https://www.openstreetmap.org/export/embed.html?bbox=${bb}&layer=mapnik&marker=${L.lat},${L.lng}" style="width:100%;height:220px;border:0;border-radius:14px;margin-top:12px" loading="lazy" title="Mapa da loja"></iframe>`;
 }
 
 function montar() {
@@ -126,6 +133,7 @@ function blocoLoja() {
     <div class="lbody"><h3>Conheça nossa loja</h3>
       ${L.endereco ? `<div class="lrow">📍 <span>${esc(L.endereco)}</span></div>` : ""}
       <div class="lrow">🕗 <span>${esc(L.horario)}</span></div>
+      ${mapaEmbed()}
       <a class="btn mapa" style="margin-top:12px" href="${mapsHref()}" target="_blank" rel="noopener">🧭 Como chegar — abre o Google Maps</a>
       <p class="note">O Google Maps traça a rota de onde você está até a loja.</p>
     </div></div>`;
