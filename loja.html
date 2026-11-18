@@ -95,6 +95,7 @@ function montar() {
       <div class="res" id="res2"></div>
       <p class="note">1 giro grátis por semana • prêmio válido por 7 dias • sem compra obrigatória para girar</p>
     </div></div>
+    <div id="spotSec" style="display:none"><div class="sec">🎧 Nossa playlist</div><div id="spotBox"></div></div>
     <button class="btn gold cta" id="verTodos" style="margin-top:18px">✨ Ver todos os perfumes</button>
     ${blocoLoja()}
   </section>
@@ -116,7 +117,7 @@ function montar() {
   $("irLoja").onclick = () => { irPara("per"); setTimeout(() => $("loja").scrollIntoView({ behavior: "smooth" }), 50); };
   $("modal").onclick = e => { if (e.target.id === "modal") fechar(); };
   $("girar").onclick = girar1; $("girar2").onclick = girar2;
-  stories(); chips(); grid(); destaque(); roda1(); roda2(); cd(); setInterval(cd, 1000);
+  stories(); chips(); grid(); destaque(); roda1(); roda2(); cd(); setInterval(cd, 1000); musica();
 }
 
 function blocoLoja() {
@@ -238,6 +239,25 @@ async function girar2() {
   if (error || !data) { girando2 = false; $("res2").textContent = "A roleta está descansando. Tente mais tarde."; return; }
   giraRoleta($("wheel2"), R2, data.indice, L.premios.length);
   setTimeout(() => { girando2 = false; MEU = { p: data.premio, c: data.codigo, t: Date.now() }; salvaMeu(); mostraMeu(); }, 4300);
+}
+
+// Música
+function embedSpotify(u) {
+  const m = String(u || "").match(/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(playlist|album|track|artist)\/([A-Za-z0-9]+)/);
+  return m ? `https://open.spotify.com/embed/${m[1]}/${m[2]}?theme=0` : null;
+}
+function musica() {
+  const e = embedSpotify(L.spotify_url);
+  if (e) { $("spotSec").style.display = ""; $("spotBox").innerHTML = `<iframe src="${e}" width="100%" height="352" frameborder="0" style="border-radius:16px" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`; }
+  if (!L.musica_url) return;
+  const a = new Audio(L.musica_url); a.loop = true; a.volume = 0.35;
+  const b = document.createElement("button"); b.id = "somBtn"; b.textContent = "🎵 Ativar clima";
+  b.style.cssText = "position:fixed;right:14px;bottom:18px;z-index:40;border:none;border-radius:30px;padding:12px 18px;font-family:inherit;font-weight:600;font-size:14px;background:linear-gradient(135deg,#f3c96b,#e09a3a);color:#1a1020;box-shadow:0 8px 24px -6px #f3c96b;cursor:pointer;animation:pulse2 1.6s infinite";
+  b.onclick = async () => {
+    if (a.paused) { try { await a.play(); b.textContent = "🔊 Pausar música"; b.style.animation = "none"; } catch (err) { b.textContent = "🎵 Toque de novo"; } }
+    else { a.pause(); b.textContent = "🎵 Ativar clima"; }
+  };
+  document.body.appendChild(b);
 }
 
 // Promoção

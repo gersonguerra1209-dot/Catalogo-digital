@@ -151,6 +151,16 @@
       <label>Foto da frente da loja</label><input type="file" id="fFach" accept="image/*">
       <button class="btn gold" id="fSalvar" style="margin-top:14px">💾 Salvar dados da loja</button>
     </div>
+    <div class="box">
+      <h3>🎵 Música da vitrine</h3>
+      <label>Playlist do Spotify (cole o link de compartilhar)</label><input id="fSpot" placeholder="https://open.spotify.com/playlist/...">
+      <p class="note" style="text-align:left">No Spotify: abra a playlist → ⋯ → Compartilhar → Copiar link.</p>
+      <label>Música de fundo (MP3 de até 10 MB)</label><input type="file" id="fMus" accept="audio/*">
+      <p class="note" style="text-align:left" id="musAtual"></p>
+      <p class="note" style="text-align:left">⚠️ Use só música <b>livre para uso comercial</b> (ex.: Pixabay Music ou Biblioteca de Áudio do YouTube). Música de artista famoso tem dono e pode dar problema de direitos autorais.</p>
+      <button class="btn gold" id="mSalvar" style="margin-top:10px">🎵 Salvar música</button>
+      <button class="btn ghost" id="mTirar">Tirar a música de fundo</button>
+    </div>
   </section>
   <p class="rodape">Catálogo digital • feito por GD</p>
 </div>
@@ -162,6 +172,14 @@
   <label class="chk"><input type="checkbox" id="pfEstudio" checked> ✨ Estúdio Mágico (deixa a foto com cara de vitrine)</label>
   <canvas id="pfPrev" class="prev" style="display:none"></canvas>
   <img id="pfAtual" class="prev" style="display:none" alt="">
+  <div class="box" style="margin-top:12px;background:#0f0a17">
+    <h3>🤖 Foto profissional com o Gemini (grátis)</h3>
+    <p style="font-size:12px;color:#d6cbe6;line-height:1.5">Preencha nome, tipo de cheiro e a frase do cheiro abaixo. Depois:<br>1️⃣ Copie o pedido · 2️⃣ Abra o Gemini, anexe a foto do perfume e cole o pedido · 3️⃣ Baixe a imagem pronta e escolha ela em <b>"Foto do perfume"</b>, com o Estúdio Mágico <b>desmarcado</b>.</p>
+    <div class="acts" style="margin-top:10px">
+      <button class="btn gold" id="gmCopiar" type="button" style="padding:11px;font-size:13px">1️⃣ Copiar pedido</button>
+      <a class="btn mapa" href="https://gemini.google.com/app" target="_blank" rel="noopener" style="padding:11px;font-size:13px">2️⃣ Abrir Gemini</a>
+    </div>
+  </div>
   <label>Nome</label><input id="pfNome" maxlength="60" placeholder="Ex.: Flor de Cacau">
   <label>Preço (R$)</label><input id="pfPreco" type="number" step="0.01" min="0" inputmode="decimal" placeholder="89.90">
   <label>Tipo de cheiro</label>
@@ -323,6 +341,31 @@ function desenhaPrev() {
   else { const k = Math.min(1, 1200 / Math.max(fotoIm.width, fotoIm.height)); src = document.createElement("canvas"); src.width = Math.round(fotoIm.width * k); src.height = Math.round(fotoIm.height * k); src.getContext("2d").drawImage(fotoIm, 0, 0, src.width, src.height); }
   cv.width = src.width; cv.height = src.height; x.drawImage(src, 0, 0); cv.style.display = "";
 }
+const ESTILO = { doce: "doce", amadeirado: "amadeirado", fresco: "fresco", noturno: "noturno e intenso" };
+function pedidoGemini() {
+  const nome = $("pfNome").value.trim(), desc = $("pfDesc").value.trim();
+  const extra = [nome && `Nome: ${nome}`, `Estilo do cheiro: ${ESTILO[$("pfTipo").value]}`, desc && `Notas: ${desc}`].filter(Boolean).join(". ");
+  return [
+    "Você é um diretor de arte de campanhas de perfumaria de luxo. Transforme a foto anexada numa imagem de vitrine digna de anúncio de revista.",
+    "",
+    "1. ANALISE O FRASCO: observe a cor do líquido e do vidro, o formato, a tampa, o rótulo, o nome e qualquer símbolo, animal, flor ou desenho que ele tenha.",
+    "",
+    "2. CRIE O CENÁRIO A PARTIR DISSO: invente uma paisagem criativa que conte a história desse perfume e faça sentido com ele. Exemplos: frasco com onça, tigre ou estampa animal → selva noturna com folhagens e luz entre as árvores; frasco rosa ou floral → jardim de rosas com pétalas no ar; frasco azul ou transparente → água cristalina, gotas e ondas; frasco preto ou dourado → mármore escuro, detalhes em ouro e fumaça elegante; frasco âmbar ou marrom → madeira nobre, especiarias e luz quente. Use as cores do próprio frasco como base da paleta.",
+    "",
+    "3. REGRAS DO PRODUTO: o frasco é o herói, no centro e em destaque. Mantenha o frasco, a tampa, o rótulo, os textos e as cores EXATAMENTE como no original. Não mude o nome, não invente outra marca e não deforme a garrafa.",
+    "",
+    "4. QUALIDADE: fotografia publicitária de luxo, iluminação de estúdio dramática com brilho no vidro, reflexo na superfície onde o frasco está apoiado, fundo levemente desfocado, nitidez máxima, cores ricas, formato vertical 4:5.",
+    "",
+    "5. NÃO ADICIONE: textos novos, logotipos, marcas d'água, mãos ou pessoas.",
+    "",
+    `Informações para inspiração: ${extra}.`
+  ].join("\n");
+}
+$("gmCopiar").onclick = async () => {
+  const t = pedidoGemini();
+  try { await navigator.clipboard.writeText(t); toast("📋 Pedido copiado! Agora abra o Gemini."); }
+  catch (e) { prompt ? prompt("Copie o pedido:", t) : toast("Não consegui copiar"); }
+};
 $("pfSalvar").onclick = async () => {
   const nome = $("pfNome").value.trim(), preco = parseFloat(String($("pfPreco").value).replace(",", "."));
   if (!nome || isNaN(preco)) return toast("⚠️ Preencha nome e preço");
@@ -411,7 +454,38 @@ $("cpBusca").onclick = async () => {
 };
 
 // ===== Dados da loja =====
+function nomeMus(u) { return u ? "🎶 Música atual: " + decodeURIComponent(u.split("/").pop()).replace(/^\d+-/, "") : "Nenhuma música de fundo."; }
+$("mSalvar").onclick = async () => {
+  const b = $("mSalvar"); b.disabled = true; b.textContent = "Salvando...";
+  try {
+    const sp = $("fSpot").value.trim();
+    if (sp && !/open\.spotify\.com\/(intl-[a-z-]+\/)?(playlist|album|track|artist)\//i.test(sp)) throw new Error("Esse link não é do Spotify");
+    const dados = { spotify_url: sp };
+    const f = $("fMus").files[0];
+    if (f) {
+      if (f.size > 10485760) throw new Error("A música passa de 10 MB");
+      const nome = f.name.normalize("NFD").replace(/[^\w.-]+/g, "_").slice(-60);
+      const caminho = `${L.id}/${Date.now()}-${nome}`;
+      const up = await sb.storage.from("musicas").upload(caminho, f, { contentType: f.type || "audio/mpeg" });
+      if (up.error) throw up.error;
+      if (L.musica_url) apagaMus(L.musica_url);
+      dados.musica_url = sb.storage.from("musicas").getPublicUrl(caminho).data.publicUrl; $("fMus").value = "";
+    }
+    const { error } = await sb.from("lojas").update(dados).eq("id", L.id);
+    if (error) throw error;
+    Object.assign(L, dados); $("musAtual").textContent = nomeMus(L.musica_url); toast("🎵 Música salva!");
+  } catch (err) { toast("⚠️ " + (err.message || "Erro")); }
+  b.disabled = false; b.textContent = "🎵 Salvar música";
+};
+function apagaMus(url) { const m = String(url || "").match(/\/object\/public\/musicas\/(.+)$/); if (m) sb.storage.from("musicas").remove([decodeURIComponent(m[1])]); }
+$("mTirar").onclick = async () => {
+  if (!L.musica_url) return toast("Não tem música de fundo");
+  const { error } = await sb.from("lojas").update({ musica_url: "" }).eq("id", L.id);
+  if (error) return toast("⚠️ " + error.message);
+  apagaMus(L.musica_url); L.musica_url = ""; $("musAtual").textContent = nomeMus(""); toast("Música retirada");
+};
 function preencheLoja() {
+  $("fSpot").value = L.spotify_url || ""; $("musAtual").textContent = nomeMus(L.musica_url);
   $("fNome").value = L.nome; $("fZap").value = fmtZap(L.whatsapp); $("fTitulo").value = L.titulo; $("fEnd").value = L.endereco;
   $("fMaps").value = L.maps_url; $("fHor").value = L.horario; $("fAbre").value = L.hora_abre; $("fFecha").value = L.hora_fecha;
   $("fDias").innerHTML = DIAS.map((d, i) => `<label class="chk" style="margin:4px 6px 4px 0"><input type="checkbox" value="${i}" ${L.dias_abertos.includes(i) ? "checked" : ""}> ${d}</label>`).join("");
