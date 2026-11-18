@@ -43,7 +43,7 @@ async function iniciar() {
   P = perf || [];
   document.title = L.nome + " — Catálogo";
   montar();
-  try { if (!sessionStorage.getItem("v_" + L.id)) { sessionStorage.setItem("v_" + L.id, "1"); sb.rpc("registrar_visita", { p_loja: L.id }); } } catch (e) {}
+  try { if (!sessionStorage.getItem("v_" + L.id)) { sessionStorage.setItem("v_" + L.id, "1"); sb.rpc("registrar_visita", { p_loja: L.id }).then(() => {}); } } catch (e) {}
   carregarStats();
   const h = location.hash.match(/^#p-(.+)$/); if (h && P.find(p => p.id === h[1])) abrir(h[1]);
 }
@@ -171,7 +171,7 @@ function linkPerfume(p) { return `${location.origin}/p/${p.id}`; }
 function abrir(id) {
   const p = P.find(x => x.id === id); if (!p) return;
   const T = TEMAS[p.tipo];
-  sb.rpc("abrir_perfume", { p_perfume: p.id });
+  sb.rpc("abrir_perfume", { p_perfume: p.id }).then(() => {});
   $("sheet").innerHTML = `<div class="scene" style="background:${T.bg}">${visual(p)}</div>
    <div class="sbody"><div class="tipo">${T.n}${p.esgotado ? " • ⛔ Esgotado" : ""}</div><h2>${esc(p.nome)}</h2>${p.descricao ? `<p>${esc(p.descricao)}</p>` : "<p></p>"}
    <div class="preco" style="font-size:24px;margin-bottom:14px">${brl(p.preco)}</div>
@@ -228,7 +228,7 @@ function mostraMeu() {
   if (dias <= 0) { MEU = null; salvaMeu(); r.innerHTML = ""; return; }
   r.innerHTML = `🎉 Seu prêmio: <b>${esc(MEU.p)}</b><br><span style="font-size:12px;color:var(--mut)">Código ${esc(MEU.c)} • válido por mais ${dias} dia${dias > 1 ? "s" : ""}</span>
     <a class="btn zap" id="resgatar" style="margin-top:10px" href="${waLink(L.whatsapp, `Olá! Ganhei *${MEU.p}* na Roleta de Prêmios do catálogo 🎁\nCódigo: ${MEU.c}\nQuero usar!`)}" target="_blank" rel="noopener">💬 Resgatar no WhatsApp</a>`;
-  $("resgatar").onclick = () => sb.rpc("registrar_resgate", { p_loja: L.id });
+  $("resgatar").onclick = () => { sb.rpc("registrar_resgate", { p_loja: L.id }).then(() => {}); };
 }
 async function girar2() {
   if (girando2) return;
