@@ -67,6 +67,7 @@
 
   <!-- INÍCIO -->
   <section id="ini" class="panel">
+    <div id="avisoPlano"></div>
     <div class="box">
       <h3>🔗 Link da sua loja</h3>
       <div class="linkbox"><span id="linkTxt" style="flex:1"></span></div>
@@ -91,7 +92,15 @@
       <button class="btn gold" id="instalar" style="display:none">📲 Instalar aplicativo</button>
       <p style="font-size:13px;color:#d6cbe6" id="instalarDica">No Android (Chrome): toque nos 3 pontinhos ⋮ e em <b>"Instalar app"</b> ou <b>"Adicionar à tela inicial"</b>.<br>No iPhone (Safari): toque em <b>Compartilhar</b> e em <b>"Adicionar à Tela de Início"</b>.</p>
     </div>
-    <div class="box" style="font-size:13px;color:#d6cbe6">📅 Seu catálogo está ativo até <b id="validade" style="color:#5dfc9a"></b></div>
+    <div class="box" id="planoBox">
+      <h3 id="plTit">💎 Seu plano</h3>
+      <p style="font-size:13px;color:#d6cbe6" id="plTxt">📅 Seu catálogo está ativo até <b id="validade" style="color:#5dfc9a"></b></p>
+      <div id="plBtns">
+        <button class="btn gold" data-plano="mensal" style="margin-top:8px">💳 Mensal • R$ 54,99/mês</button>
+        <a class="btn zap" id="plAnual" target="_blank" rel="noopener" style="margin-top:8px">💬 Quer plano anual? Fale comigo no WhatsApp</a>
+        <p class="note">Pagamento seguro pelo Mercado Pago. Renova sozinho, sem você precisar lembrar. Cancela quando quiser.</p>
+      </div>
+    </div>
     <a class="btn ghost" id="linkMestre" href="/mestre.html" style="display:none">👑 Painel mestre</a>
     <button class="btn ghost" id="sair">Sair</button>
   </section>
@@ -184,12 +193,14 @@
   <canvas id="pfPrev" class="prev" style="display:none"></canvas>
   <img id="pfAtual" class="prev" style="display:none" alt="">
   <div class="box" style="margin-top:12px;background:#0f0a17">
-    <h3>🤖 Foto profissional com o Gemini (grátis)</h3>
-    <p style="font-size:12px;color:#d6cbe6;line-height:1.5">Preencha nome, tipo de cheiro e a frase do cheiro abaixo. Depois:<br>1️⃣ Copie o pedido · 2️⃣ Abra o Gemini, anexe a foto do perfume e cole o pedido · 3️⃣ Baixe a imagem pronta e escolha ela em <b>"Foto do perfume"</b>, com o Estúdio Mágico <b>desmarcado</b>.</p>
+    <h3>🤖 Foto profissional com IA grátis (Gemini ou Dola)</h3>
+    <p style="font-size:12px;color:#d6cbe6;line-height:1.5">Preencha nome, tipo de cheiro e a frase do cheiro abaixo. Depois:<br>1️⃣ Copie o pedido · 2️⃣ Abra o Gemini ou o Dola, anexe a foto do perfume e cole o pedido · 3️⃣ Baixe a imagem pronta e escolha ela em <b>"Foto do perfume"</b>, com o Estúdio Mágico <b>desmarcado</b>.</p>
     <div class="acts" style="margin-top:10px">
       <button class="btn gold" id="gmCopiar" type="button" style="padding:11px;font-size:13px">1️⃣ Copiar pedido</button>
       <a class="btn mapa" href="https://gemini.google.com/app" target="_blank" rel="noopener" style="padding:11px;font-size:13px">2️⃣ Abrir Gemini</a>
     </div>
+    <a class="btn" href="https://www.dola.com" target="_blank" rel="noopener" style="margin-top:8px;padding:11px;font-size:13px;background:#1c1529;border:1px solid #3a2e4d;color:#fff">2️⃣ Ou abrir o Dola</a>
+    <p class="note">Tem o app do Dola instalado? Abra direto por ele, que fica mais rápido.</p>
   </div>
   <label>Nome</label><input id="pfNome" maxlength="60" placeholder="Ex.: Flor de Cacau">
   <label>Preço (R$)</label><input id="pfPreco" type="number" step="0.01" min="0" inputmode="decimal" placeholder="89.90">
@@ -284,7 +295,34 @@ function preencheInicio() {
   $("linkTxt").textContent = linkLoja(); $("abrirCat").href = linkLoja();
   $("compartilhar").href = "https://wa.me/?text=" + encodeURIComponent(`✨ Conheça o catálogo da ${L.nome}! Veja os perfumes, gire a roleta de prêmios e peça direto pelo WhatsApp:\n${linkLoja()}`);
   $("validade").textContent = new Date(L.ativo_ate + "T12:00:00").toLocaleDateString("pt-BR");
+  mostraPlano();
 }
+function mostraPlano() {
+  const dias = Math.ceil((new Date(L.ativo_ate + "T23:59:59") - new Date()) / 864e5);
+  const nomes = { teste: "Teste grátis", mensal: "Plano Mensal", anual: "Plano Anual", manual: "Plano ativo" };
+  $("plTit").textContent = "💎 " + (nomes[L.plano] || "Seu plano");
+  const assinante = L.plano === "mensal" || L.plano === "anual";
+  $("plBtns").style.display = assinante && dias > 3 ? "none" : "";
+  let aviso = "";
+  if (dias < 1) aviso = `<div class="box" style="border-color:#ff8a8a;background:#2a0f14"><b>⛔ Seu catálogo está fora do ar.</b><br><span style="font-size:13px">Escolha um plano abaixo e ele volta na hora, sozinho.</span></div>`;
+  else if (L.plano === "teste") aviso = `<div class="box" style="border-color:var(--gold)"><b>🎁 Teste grátis: falta${dias > 1 ? "m" : ""} ${dias} dia${dias > 1 ? "s" : ""}.</b><br><span style="font-size:13px">Para não sair do ar, escolha seu plano lá embaixo.</span></div>`;
+  else if (!assinante && dias <= 5) aviso = `<div class="box" style="border-color:var(--gold)"><b>⏳ Seu catálogo vence em ${dias} dia${dias > 1 ? "s" : ""}.</b><br><span style="font-size:13px">Escolha um plano para renovar automático.</span></div>`;
+  $("avisoPlano").innerHTML = aviso;
+  $("plAnual").href = "https://wa.me/5597984200294?text=" + encodeURIComponent(`Olá! Sou da loja ${L.nome} (${linkLoja()}) e quero saber do plano anual do catálogo.`);
+}
+$("plBtns").onclick = async e => {
+  const b = e.target.closest("[data-plano]"); if (!b) return;
+  const txt = b.textContent; b.disabled = true; b.textContent = "Abrindo o Mercado Pago...";
+  try {
+    const { data } = await sb.auth.getSession();
+    const r = await fetch("/.netlify/functions/assinar", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + data.session.access_token }, body: JSON.stringify({ plano: b.dataset.plano }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.link) throw new Error(j.erro || "Não consegui abrir o pagamento");
+    location.href = j.link;
+  } catch (err) { toast("⚠️ " + err.message); b.disabled = false; b.textContent = txt; }
+};
+if (/[?&]pago=1/.test(location.search)) setTimeout(() => toast("💳 Pagamento recebido! Sua loja é liberada em instantes."), 1500);
+if (/[?&]nova=1/.test(location.search)) setTimeout(() => toast("🎉 Bem-vinda! Você tem 4 dias grátis. Cadastre seus perfumes."), 1500);
 $("copiar").onclick = async () => { try { await navigator.clipboard.writeText(linkLoja()); toast("📋 Link copiado!"); } catch (e) { toast("Segure o dedo no link para copiar"); } };
 async function carregaStats() {
   if (!L) return;
@@ -374,7 +412,7 @@ function pedidoGemini() {
 }
 $("gmCopiar").onclick = async () => {
   const t = pedidoGemini();
-  try { await navigator.clipboard.writeText(t); toast("📋 Pedido copiado! Agora abra o Gemini."); }
+  try { await navigator.clipboard.writeText(t); toast("📋 Pedido copiado! Agora abra o Gemini ou o Dola."); }
   catch (e) { prompt ? prompt("Copie o pedido:", t) : toast("Não consegui copiar"); }
 };
 $("pfSalvar").onclick = async () => {

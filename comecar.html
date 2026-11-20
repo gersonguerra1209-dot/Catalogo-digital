@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teste grátis por 4 dias — Catálogo Digital</title>
+<meta name="theme-color" content="#0b0710">
+<meta property="og:title" content="Catálogo Digital — teste grátis por 4 dias">
+<meta property="og:description" content="Crie a vitrine da sua loja de perfumes agora, com roleta de prêmios e pedidos no WhatsApp.">
+<link rel="icon" href="/icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/estilo.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/comum.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><div class="logo">✦ Catálogo Digital</div><a class="tab" href="/painel.html">Já tenho conta</a></div>
+  <div class="hero" id="hero">
+    <h1>Sua vitrine pronta em 2 minutos</h1>
+    <p>Teste <b>grátis por 4 dias</b>. Sem cartão agora. Se gostar, escolhe o plano dentro do painel.</p>
+  </div>
+  <div class="box" style="max-width:480px;margin:0 auto">
+    <h3>🏪 Sua loja</h3>
+    <label>Nome da loja</label><input id="cNome" placeholder="Ex.: Essência Rara">
+    <label>Link da loja (o final do endereço)</label><input id="cSlug" placeholder="essencia-rara">
+    <p class="note" style="text-align:left" id="cLink"></p>
+    <label>WhatsApp que recebe os pedidos (DDD + número)</label><input id="cZap" inputmode="tel" placeholder="97 99999 9999">
+    <h3 style="margin-top:16px">🔐 Seu acesso ao painel</h3>
+    <label>E-mail</label><input id="cEmail" type="email" autocomplete="email">
+    <label>Crie uma senha (mínimo 6)</label><input id="cSenha" type="password" autocomplete="new-password">
+    <button class="btn gold cta" id="cCriar" style="margin-top:16px">✨ Criar minha loja grátis</button>
+    <p class="note" id="cMsg"></p>
+    <p class="note">Depois dos 4 dias: <b>R$ 54,99/mês</b>. Sem fidelidade.</p>
+  </div>
+  <p class="rodape">Catálogo digital • feito por GD</p>
+</div>
+<script>
+const h = $("hero");
+for (let i = 0; i < 14; i++) { const s = document.createElement("i"); s.className = "spark"; s.style.left = Math.random() * 100 + "%"; s.style.top = Math.random() * 100 + "%"; s.style.animationDelay = Math.random() * 6 + "s"; h.appendChild(s); }
+let slugMexido = false;
+function slugify(t) { return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40); }
+function mostraLink() { $("cLink").textContent = "Seu link: " + location.origin + "/" + ($("cSlug").value || "..."); }
+$("cNome").oninput = () => { if (!slugMexido) $("cSlug").value = slugify($("cNome").value); mostraLink(); };
+$("cSlug").oninput = () => { slugMexido = true; $("cSlug").value = slugify($("cSlug").value); mostraLink(); };
+mostraLink();
+function traduz(m) {
+  if (/already registered/i.test(m)) return "Esse e-mail já tem conta. Use 'Já tenho conta' lá em cima.";
+  if (/rate limit/i.test(m)) return "Muitas tentativas. Espere alguns minutos.";
+  return m;
+}
+$("cCriar").onclick = async () => {
+  const nome = $("cNome").value.trim(), slug = $("cSlug").value.trim(), zap = $("cZap").value, email = $("cEmail").value.trim(), senha = $("cSenha").value;
+  if (nome.length < 2 || slug.length < 3) return $("cMsg").textContent = "⚠️ Preencha o nome e o link da loja.";
+  if (!email || senha.length < 6) return $("cMsg").textContent = "⚠️ Coloque o e-mail e uma senha com pelo menos 6 caracteres.";
+  const b = $("cCriar"); b.disabled = true; $("cMsg").textContent = "Criando sua loja...";
+  try {
+    let { data: s } = await sb.auth.getSession();
+    if (!s.session) {
+      const r = await sb.auth.signUp({ email, password: senha });
+      if (r.error) throw new Error(traduz(r.error.message));
+      if (!r.data.session) throw new Error("Conta criada. Confirme o e-mail e depois entre pelo painel.");
+    }
+    const { error } = await sb.rpc("criar_minha_loja", { p_nome: nome, p_slug: slug, p_whatsapp: zap });
+    if (error) throw new Error(error.message);
+    $("cMsg").textContent = "🎉 Loja criada! Abrindo seu painel...";
+    location.href = "/painel.html?nova=1";
+  } catch (e) { $("cMsg").textContent = "⚠️ " + e.message; b.disabled = false; }
+};
+</script>
+</body>
+</html>

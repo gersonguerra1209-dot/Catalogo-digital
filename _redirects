@@ -1,4 +1,5 @@
 /painel   /painel.html   200
 /mestre   /mestre.html   200
 /p/:id    /.netlify/functions/perfume?id=:id   200
+/comecar   /comecar.html   200
 /:slug    /.netlify/functions/loja?slug=:slug  200
