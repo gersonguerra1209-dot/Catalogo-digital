@@ -92,11 +92,19 @@
       <button class="btn gold" id="instalar" style="display:none">📲 Instalar aplicativo</button>
       <p style="font-size:13px;color:#d6cbe6" id="instalarDica">No Android (Chrome): toque nos 3 pontinhos ⋮ e em <b>"Instalar app"</b> ou <b>"Adicionar à tela inicial"</b>.<br>No iPhone (Safari): toque em <b>Compartilhar</b> e em <b>"Adicionar à Tela de Início"</b>.</p>
     </div>
+    <div class="box" id="indBox">
+      <h3>🤝 Indique e pague menos</h3>
+      <p style="font-size:13px;color:#d6cbe6">Cada loja que você indicar e que <b>estiver pagando</b> tira <b>R$ 10</b> da sua mensalidade.<br>1 indicação: <b>R$ 44,99</b> • 2 indicações: <b>R$ 34,99</b></p>
+      <p style="font-size:14px" id="indStatus">Carregando...</p>
+      <div class="linkbox"><span id="indLink" style="flex:1;font-size:12px"></span></div>
+      <a class="btn zap" id="indZap" target="_blank" rel="noopener" style="margin-top:8px">💬 Mandar convite no WhatsApp</a>
+      <p class="note">O desconto entra sozinho no seu próximo pagamento. Se a indicada parar de pagar, o desconto dela sai.</p>
+    </div>
     <div class="box" id="planoBox">
       <h3 id="plTit">💎 Seu plano</h3>
       <p style="font-size:13px;color:#d6cbe6" id="plTxt">📅 Seu catálogo está ativo até <b id="validade" style="color:#5dfc9a"></b></p>
       <div id="plBtns">
-        <button class="btn gold" data-plano="mensal" style="margin-top:8px">💳 Mensal • R$ 54,99/mês</button>
+        <button class="btn gold" data-plano="mensal" id="plMensal" style="margin-top:8px">💳 Mensal • R$ 54,99/mês</button>
         <a class="btn zap" id="plAnual" target="_blank" rel="noopener" style="margin-top:8px">💬 Quer plano anual? Fale comigo no WhatsApp</a>
         <p class="note">Pagamento seguro pelo Mercado Pago. Renova sozinho, sem você precisar lembrar. Cancela quando quiser.</p>
       </div>
@@ -308,7 +316,18 @@ function mostraPlano() {
   else if (L.plano === "teste") aviso = `<div class="box" style="border-color:var(--gold)"><b>🎁 Teste grátis: falta${dias > 1 ? "m" : ""} ${dias} dia${dias > 1 ? "s" : ""}.</b><br><span style="font-size:13px">Para não sair do ar, escolha seu plano lá embaixo.</span></div>`;
   else if (!assinante && dias <= 5) aviso = `<div class="box" style="border-color:var(--gold)"><b>⏳ Seu catálogo vence em ${dias} dia${dias > 1 ? "s" : ""}.</b><br><span style="font-size:13px">Escolha um plano para renovar automático.</span></div>`;
   $("avisoPlano").innerHTML = aviso;
+  carregaIndicacoes();
   $("plAnual").href = "https://wa.me/5597984200294?text=" + encodeURIComponent(`Olá! Sou da loja ${L.nome} (${linkLoja()}) e quero saber do plano anual do catálogo.`);
+}
+async function carregaIndicacoes() {
+  const link = location.origin + "/comecar?ind=" + encodeURIComponent(L.slug);
+  $("indLink").textContent = link;
+  $("indZap").href = "https://wa.me/?text=" + encodeURIComponent(`Oi! Eu uso um catálogo digital na minha loja (${L.nome}) e os clientes pedem direto pelo WhatsApp. Testa grátis por 4 dias pelo meu link:\n${link}`);
+  const { data } = await sb.rpc("minhas_indicacoes");
+  const i = data && data[0]; if (!i) { $("indStatus").textContent = ""; return; }
+  const preco = Number(i.preco).toFixed(2).replace(".", ",");
+  $("indStatus").innerHTML = `👥 Indicadas: <b>${i.total}</b> • pagando: <b style="color:#5dfc9a">${i.pagando}</b><br>💳 Sua mensalidade: <b style="color:var(--gold)">R$ ${preco}</b>`;
+  $("plMensal").textContent = `💳 Mensal • R$ ${preco}/mês`;
 }
 $("plBtns").onclick = async e => {
   const b = e.target.closest("[data-plano]"); if (!b) return;

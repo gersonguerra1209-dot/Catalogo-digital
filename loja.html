@@ -117,7 +117,7 @@ function montar() {
     <div class="grid" id="grid"></div>
     ${P.length ? "" : `<p class="note" style="font-size:14px;margin-top:20px">Em breve, novos perfumes por aqui ✨</p>`}
   </section>
-  <p class="rodape">Catálogo digital • feito por GD</p>`;
+  <p class="rodape"><a href="/comecar?ind=${encodeURIComponent(L.slug)}" style="color:inherit">Tem loja? Crie seu catálogo grátis • feito por GD</a></p>`;
   for (const id of ["cover", "hero"]) { const el = $(id); for (let i = 0; i < 16; i++) { const s = document.createElement("i"); s.className = "spark"; s.style.left = Math.random() * 100 + "%"; s.style.top = Math.random() * 100 + "%"; s.style.animationDelay = Math.random() * 6 + "s"; el.appendChild(s); } }
   document.querySelectorAll(".tab").forEach(t => t.onclick = () => irPara(t.dataset.v));
   $("verTodos").onclick = () => { filtro = "todos"; chips(); grid(); irPara("cat"); };

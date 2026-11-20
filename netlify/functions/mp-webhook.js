@@ -1,6 +1,7 @@
 // O Mercado Pago chama este endereço a cada pagamento. Nunca confiamos no aviso:
 // sempre perguntamos de novo ao próprio Mercado Pago antes de liberar a loja.
 const PLANOS = require("./_planos");
+const { ajustaPreco } = require("./_desconto");
 const SUPA = "https://sbcotxamjsojtqbfkyhm.supabase.co";
 const ok = { statusCode: 200, body: "ok" };
 
@@ -35,7 +36,15 @@ exports.handler = async (event) => {
     if (tipo === "subscription_preapproval") {
       const pre = await mp(`/preapproval/${id}`, MP);
       const [lojaId] = String(pre.external_reference || "").split("|");
-      if (lojaId) await supa(`lojas?id=eq.${lojaId}`, SERV, { method: "PATCH", body: JSON.stringify({ mp_assinatura: pre.id }) });
+      if (!lojaId) return ok;
+      if (pre.status === "cancelled") {
+        // a dona cancelou: a loja fica no ar até o dia já pago, mas deixa de contar como indicação
+        const r = await supa(`lojas?id=eq.${lojaId}&mp_assinatura=eq.${pre.id}`, SERV, { method: "PATCH", body: JSON.stringify({ plano: "cancelado" }) });
+        const l = r.data && r.data[0];
+        if (l && l.indicado_por) await ajustaPreco(l.indicado_por, MP, SERV);
+      } else {
+        await supa(`lojas?id=eq.${lojaId}`, SERV, { method: "PATCH", body: JSON.stringify({ mp_assinatura: pre.id }) });
+      }
       return ok;
     }
 
@@ -51,7 +60,11 @@ exports.handler = async (event) => {
       if (!ins.ok) return ok;
       const l = await supa(`lojas?id=eq.${lojaId}&select=ativo_ate`, SERV);
       const atual = (l.data && l.data[0] && l.data[0].ativo_ate) || new Date().toISOString().slice(0, 10);
-      await supa(`lojas?id=eq.${lojaId}`, SERV, { method: "PATCH", body: JSON.stringify({ ativo_ate: somaMeses(atual, P.meses), plano, mp_assinatura: pre.id }) });
+      const up = await supa(`lojas?id=eq.${lojaId}`, SERV, { method: "PATCH", body: JSON.stringify({ ativo_ate: somaMeses(atual, P.meses), plano, mp_assinatura: pre.id }) });
+      const loja = up.data && up.data[0];
+      // ela pagou: quem indicou ganha o desconto; e ela mesma pode ter direito a desconto
+      if (loja && loja.indicado_por) await ajustaPreco(loja.indicado_por, MP, SERV);
+      await ajustaPreco(lojaId, MP, SERV);
       return ok;
     }
     return ok;

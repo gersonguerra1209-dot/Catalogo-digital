@@ -39,6 +39,8 @@
 const h = $("hero");
 for (let i = 0; i < 14; i++) { const s = document.createElement("i"); s.className = "spark"; s.style.left = Math.random() * 100 + "%"; s.style.top = Math.random() * 100 + "%"; s.style.animationDelay = Math.random() * 6 + "s"; h.appendChild(s); }
 let slugMexido = false;
+const IND = (() => { const q = new URLSearchParams(location.search).get("ind"); try { if (q) localStorage.setItem("ind", q); return q || localStorage.getItem("ind"); } catch (e) { return q; } })();
+if (IND) $("cMsg").textContent = "🤝 Você foi indicada por uma loja parceira.";
 function slugify(t) { return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40); }
 function mostraLink() { $("cLink").textContent = "Seu link: " + location.origin + "/" + ($("cSlug").value || "..."); }
 $("cNome").oninput = () => { if (!slugMexido) $("cSlug").value = slugify($("cNome").value); mostraLink(); };
@@ -61,7 +63,7 @@ $("cCriar").onclick = async () => {
       if (r.error) throw new Error(traduz(r.error.message));
       if (!r.data.session) throw new Error("Conta criada. Confirme o e-mail e depois entre pelo painel.");
     }
-    const { error } = await sb.rpc("criar_minha_loja", { p_nome: nome, p_slug: slug, p_whatsapp: zap });
+    const { error } = await sb.rpc("criar_minha_loja", { p_nome: nome, p_slug: slug, p_whatsapp: zap, p_indicador: IND || null });
     if (error) throw new Error(error.message);
     $("cMsg").textContent = "🎉 Loja criada! Abrindo seu painel...";
     location.href = "/painel.html?nova=1";

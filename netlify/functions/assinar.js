@@ -1,5 +1,6 @@
 // Cria a assinatura no Mercado Pago para a loja da dona logada e devolve o link de pagamento.
 const PLANOS = require("./_planos");
+const { precoLoja, supa } = require("./_desconto");
 const SUPA = "https://sbcotxamjsojtqbfkyhm.supabase.co";
 const ANON = "sb_publishable_aGDtHnBTeGn_bscaJzxSug_TtGYoZpl";
 const json = (code, obj) => ({ statusCode: code, headers: { "content-type": "application/json" }, body: JSON.stringify(obj) });
@@ -19,6 +20,7 @@ exports.handler = async (event) => {
     const r = await fetch(`${SUPA}/rest/v1/lojas?owner_id=eq.${user.id}&select=id,nome,slug`, { headers: { apikey: SERV, Authorization: `Bearer ${SERV}` } });
     const [loja] = await r.json();
     if (!loja) return json(404, { erro: "Loja não encontrada" });
+    const valor = plano === "mensal" ? await precoLoja(loja.id, SERV) : P.valor;
     const base = `https://${event.headers["x-forwarded-host"] || event.headers.host}`;
     const mp = await fetch("https://api.mercadopago.com/preapproval", {
       method: "POST",
@@ -28,12 +30,13 @@ exports.handler = async (event) => {
         external_reference: `${loja.id}|${plano}`,
         payer_email: user.email,
         back_url: `${base}/painel.html?pago=1`,
-        auto_recurring: { frequency: P.meses, frequency_type: "months", transaction_amount: P.valor, currency_id: "BRL" },
+        auto_recurring: { frequency: P.meses, frequency_type: "months", transaction_amount: valor, currency_id: "BRL" },
         status: "pending"
       })
     });
     const d = await mp.json();
     if (!mp.ok || !d.init_point) return json(502, { erro: "Mercado Pago recusou: " + (d.message || mp.status) });
+    if (plano === "mensal") await supa(`lojas?id=eq.${loja.id}`, SERV, { method: "PATCH", body: JSON.stringify({ valor_mensal: valor }) });
     return json(200, { link: d.init_point });
   } catch (e) {
     return json(500, { erro: "Erro: " + e.message });
