@@ -37,8 +37,8 @@ let L = null, P = [], filtro = "todos", R1 = { rot: 0 }, R2 = { rot: 0 }, girand
 
 function slugAtual() {
   const q = new URLSearchParams(location.search).get("l");
-  if (q) return q.toLowerCase();
-  return decodeURIComponent(location.pathname.split("/").filter(Boolean)[0] || "").toLowerCase();
+  const bruto = q || decodeURIComponent(location.pathname.split("/").filter(Boolean)[0] || "");
+  return bruto.toLowerCase().replace(/[^a-z0-9-]/g, ""); // limpa sobras que o Instagram/WhatsApp às vezes colam no link
 }
 
 function indisponivel(msg) {
@@ -48,8 +48,18 @@ function indisponivel(msg) {
 async function iniciar() {
   const slug = slugAtual();
   if (!slug) return indisponivel("Catálogo não encontrado");
-  const { data: loja, error } = await sb.from("lojas").select("*").eq("slug", slug).maybeSingle();
-  if (error || !loja) return indisponivel("Catálogo indisponível");
+  // internet fraca: tenta até 3 vezes antes de desistir
+  let loja = null, error = null;
+  for (let t = 0; t < 3; t++) {
+    ({ data: loja, error } = await sb.from("lojas").select("*").eq("slug", slug).maybeSingle());
+    if (!error) break;
+    await new Promise(r => setTimeout(r, 1200 * (t + 1)));
+  }
+  if (error) {
+    $("app").innerHTML = `<div class="centro"><div style="font-size:46px">📶</div><h2 style="font-family:'Cormorant Garamond',serif;font-size:28px">A internet oscilou</h2><p style="color:var(--mut);font-size:14px">Não consegui abrir a vitrine agora.</p><button class="btn gold" onclick="location.reload()" style="max-width:260px;margin:14px auto 0">🔄 Tentar de novo</button></div>`;
+    return;
+  }
+  if (!loja) return indisponivel("Catálogo indisponível");
   L = loja;
   if (new Date(L.ativo_ate + "T23:59:59") < new Date()) return indisponivel("Catálogo indisponível no momento");
   const { data: perf } = await sb.from("perfumes").select("*").eq("loja_id", L.id).order("criado_em", { ascending: false });
