@@ -11,6 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <script>
 // cada loja tem seu próprio "aplicativo" para o cliente instalar
+window.SB_PUBLICO = true;
 (function () {
   var q = new URLSearchParams(location.search).get("l");
   var s = (q || decodeURIComponent(location.pathname.split("/").filter(Boolean)[0] || "")).toLowerCase();

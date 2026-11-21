@@ -1,7 +1,8 @@
 // ===== Configuração comum =====
 const SUPA_URL = "https://sbcotxamjsojtqbfkyhm.supabase.co";
 const SUPA_KEY = "sb_publishable_aGDtHnBTeGn_bscaJzxSug_TtGYoZpl";
-const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+// Na vitrine pública (cliente) não usamos login: assim um login antigo guardado no celular nunca atrapalha a loja de abrir.
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY, window.SB_PUBLICO ? { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: "sb-vitrine-publica" } } : undefined);
 
 const TEMAS = {
   doce:       { n: "🌸 Doce",       bg: "radial-gradient(circle at 50% 40%,#ff9fc0 0%,#b03a6e 45%,#2c0a1d 100%)", a: "#ffb3cf", b: "#e0457f", glow: "#ff7aa8", c1: "#ff9fc0", c2: "#b03a6e", c3: "#2c0a1d" },
