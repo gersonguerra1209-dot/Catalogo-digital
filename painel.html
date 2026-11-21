@@ -166,7 +166,7 @@
       <label>Dias abertos</label>
       <div id="fDias" style="display:flex;gap:6px;flex-wrap:wrap"></div>
       <div style="display:flex;gap:8px"><div style="flex:1"><label>Abre às (hora)</label><input id="fAbre" type="number" min="0" max="23"></div><div style="flex:1"><label>Fecha às (hora)</label><input id="fFecha" type="number" min="1" max="24"></div></div>
-      <label>Logo da loja</label><input type="file" id="fLogo" accept="image/*">
+      <label>Logo da loja <span style="font-weight:400;color:#d6cbe6">(vira o ícone da loja no celular do cliente)</span></label><input type="file" id="fLogo" accept="image/*">
       <label>Foto da frente da loja</label><input type="file" id="fFach" accept="image/*">
       <button class="btn gold" id="fSalvar" style="margin-top:14px">💾 Salvar dados da loja</button>
     </div>
@@ -615,12 +615,39 @@ $("fSalvar").onclick = async () => {
       if (L[campo]) apagaFoto(L[campo]);
       dados[campo] = sb.storage.from("fotos").getPublicUrl(caminho).data.publicUrl; $(inp).value = "";
     }
+    // ícone do "aplicativo" da loja: feito da logo, para o cliente que instalar a loja no celular
+    const logoNova = dados.logo_url && dados.logo_url !== L.logo_url;
+    if (logoNova || (!L.icone_url && (dados.logo_url || L.logo_url))) {
+      try {
+        const icone = await fazIcone(dados.logo_url || L.logo_url), caminho = `${L.id}/icone-${Date.now()}.png`;
+        const up = await sb.storage.from("fotos").upload(caminho, icone, { contentType: "image/png" });
+        if (!up.error) { if (L.icone_url) apagaFoto(L.icone_url); dados.icone_url = sb.storage.from("fotos").getPublicUrl(caminho).data.publicUrl; }
+      } catch (e) {}
+    }
     const { error } = await sb.from("lojas").update(dados).eq("id", L.id);
     if (error) throw error;
     Object.assign(L, dados); $("topNome").textContent = "✦ " + L.nome; preencheInicio(); toast("✅ Dados da loja salvos!");
   } catch (err) { toast("⚠️ " + (err.message || "Erro")); }
   b.disabled = false; b.textContent = "💾 Salvar dados da loja";
 };
+
+// Ícone quadrado 512x512 a partir da logo (fundo com a cor da borda da logo)
+function fazIcone(url) {
+  return new Promise((ok, erro) => {
+    const im = new Image(); im.crossOrigin = "anonymous";
+    im.onload = () => {
+      const T = 512, cv = document.createElement("canvas"); cv.width = cv.height = T; const c = cv.getContext("2d");
+      const t = document.createElement("canvas"); t.width = t.height = 1; const tc = t.getContext("2d"); tc.drawImage(im, 0, 0, 1, 1, 0, 0, 1, 1);
+      let cor = "#ffffff"; try { const d = tc.getImageData(0, 0, 1, 1).data; if (d[3] > 200) cor = `rgb(${d[0]},${d[1]},${d[2]})`; } catch (e) {}
+      c.fillStyle = cor; c.fillRect(0, 0, T, T);
+      const m = T * 0.16, k = Math.min((T - 2 * m) / im.width, (T - 2 * m) / im.height), w = im.width * k, h = im.height * k;
+      c.drawImage(im, (T - w) / 2, (T - h) / 2, w, h);
+      cv.toBlob(b => b ? ok(b) : erro(new Error("ícone")), "image/png");
+    };
+    im.onerror = () => erro(new Error("logo"));
+    im.src = url + (url.includes("?") ? "&" : "?") + "i=1";
+  });
+}
 
 // ===== App instalável =====
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});

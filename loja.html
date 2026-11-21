@@ -6,6 +6,19 @@
 <title>Catálogo</title>
 <meta name="theme-color" content="#0b0710">
 <link rel="icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>
+// cada loja tem seu próprio "aplicativo" para o cliente instalar
+(function () {
+  var q = new URLSearchParams(location.search).get("l");
+  var s = (q || decodeURIComponent(location.pathname.split("/").filter(Boolean)[0] || "")).toLowerCase();
+  if (/^[a-z0-9-]{3,40}$/.test(s)) { var l = document.createElement("link"); l.rel = "manifest"; l.href = "/m/" + s; document.head.appendChild(l); }
+  window.__instalar = null;
+  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); window.__instalar = e; var b = document.getElementById("instBox"); if (b) b.style.display = ""; });
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/estilo.css">
@@ -104,6 +117,11 @@ function montar() {
     </div></div>
     <div id="spotSec" style="display:none"><div class="sec">🎧 Nossa playlist</div><div id="spotBox"></div></div>
     <button class="btn gold cta" id="verTodos" style="margin-top:18px">✨ Ver todos os perfumes</button>
+    <div class="box" id="instBox" style="display:none;text-align:center;margin-top:14px">
+      <b>📲 Salve a ${esc(L.nome)} no seu celular</b>
+      <p style="font-size:13px;color:var(--mut);margin:6px 0 10px" id="instTxt">Fica um ícone na sua tela, igual aplicativo. Abre direto na loja, com as promoções do dia.</p>
+      <button class="btn zap" id="instBtn">📲 Instalar a loja</button>
+    </div>
     ${blocoLoja()}
   </section>
   <section id="cat" class="panel">
@@ -124,7 +142,7 @@ function montar() {
   $("irLoja").onclick = () => { irPara("per"); setTimeout(() => $("loja").scrollIntoView({ behavior: "smooth" }), 50); };
   $("modal").onclick = e => { if (e.target.id === "modal") fechar(); };
   $("girar").onclick = girar1; $("girar2").onclick = girar2;
-  stories(); chips(); grid(); destaque(); roda1(); roda2(); cd(); setInterval(cd, 1000); musica();
+  stories(); chips(); grid(); destaque(); roda1(); roda2(); cd(); setInterval(cd, 1000); musica(); preparaInstalar();
 }
 
 function blocoLoja() {
@@ -266,6 +284,23 @@ function musica() {
     else { a.pause(); b.textContent = "🎵 Ativar clima"; }
   };
   document.body.appendChild(b);
+}
+
+// Instalar a loja no celular do cliente
+function preparaInstalar() {
+  if (L.icone_url) { const a = document.querySelector('link[rel="apple-touch-icon"]'); if (a) a.href = L.icone_url; const f = document.querySelector('link[rel="icon"]'); if (f) f.href = L.icone_url; }
+  if (!document.querySelector('meta[name="apple-mobile-web-app-title"]')) document.head.insertAdjacentHTML("beforeend", `<meta name="apple-mobile-web-app-title" content="${esc(L.nome)}">`);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+  if (matchMedia("(display-mode: standalone)").matches || navigator.standalone) return; // já está instalada
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const dica = t => { $("instTxt").innerHTML = t; };
+  if (window.__instalar) $("instBox").style.display = "";
+  else if (ios) { $("instBox").style.display = ""; dica('No iPhone: toque em <b>Compartilhar</b> ⬆️ e depois em <b>"Adicionar à Tela de Início"</b>.'); $("instBtn").style.display = "none"; }
+  $("instBtn").onclick = async () => {
+    if (!window.__instalar) return dica('Toque nos <b>3 pontinhos ⋮</b> do navegador e depois em <b>"Adicionar à tela inicial"</b>.');
+    window.__instalar.prompt(); const r = await window.__instalar.userChoice; window.__instalar = null;
+    if (r.outcome === "accepted") $("instBox").innerHTML = "<b>✅ Loja salva no seu celular!</b>";
+  };
 }
 
 // Promoção
