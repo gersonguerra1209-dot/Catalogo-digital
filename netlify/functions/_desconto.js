@@ -1,4 +1,4 @@
-// Indicação premiada: cada indicada pagando tira R$ 10 da mensalidade de quem indicou (máx. 2 → R$ 34,99).
+// Indicação premiada: cada indicada pagando tira R$ 10 da mensalidade de quem indicou (máx. 2 → R$ 12,99).
 // Esta função confere o preço certo e, se mudou, avisa o Mercado Pago para cobrar o valor novo.
 const SUPA = "https://sbcotxamjsojtqbfkyhm.supabase.co";
 
@@ -8,7 +8,7 @@ async function supa(path, SERV, opts = {}) {
 }
 async function precoLoja(lojaId, SERV) {
   const r = await supa("rpc/preco_loja", SERV, { method: "POST", body: JSON.stringify({ p_loja: lojaId }) });
-  return r.ok ? Number(r.data) : 54.99;
+  return r.ok ? Number(r.data) : 32.99;
 }
 async function ajustaPreco(lojaId, MP, SERV) {
   if (!lojaId) return;
