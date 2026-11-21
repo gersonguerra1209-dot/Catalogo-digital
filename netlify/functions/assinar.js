@@ -1,6 +1,8 @@
 // Cria a assinatura no Mercado Pago para a loja da dona logada e devolve o link de pagamento.
 const PLANOS = require("./_planos");
 const { precoLoja, supa } = require("./_desconto");
+// Chave secreta nova do Supabase (sb_secret_...) vai só no "apikey"; a antiga (JWT) vai nos dois.
+const chave = (k) => (String(k).startsWith("sb_") ? { apikey: k } : { apikey: k, Authorization: `Bearer ${k}` });
 const SUPA = "https://sbcotxamjsojtqbfkyhm.supabase.co";
 const ANON = "sb_publishable_aGDtHnBTeGn_bscaJzxSug_TtGYoZpl";
 const json = (code, obj) => ({ statusCode: code, headers: { "content-type": "application/json" }, body: JSON.stringify(obj) });
@@ -17,7 +19,7 @@ exports.handler = async (event) => {
     const u = await fetch(`${SUPA}/auth/v1/user`, { headers: { apikey: ANON, Authorization: `Bearer ${token}` } });
     if (!u.ok) return json(401, { erro: "Entre no painel de novo" });
     const user = await u.json();
-    const r = await fetch(`${SUPA}/rest/v1/lojas?owner_id=eq.${user.id}&select=id,nome,slug`, { headers: { apikey: SERV, Authorization: `Bearer ${SERV}` } });
+    const r = await fetch(`${SUPA}/rest/v1/lojas?owner_id=eq.${user.id}&select=id,nome,slug`, { headers: { ...chave(SERV) } });
     const [loja] = await r.json();
     if (!loja) return json(404, { erro: "Loja não encontrada" });
     const valor = plano === "mensal" ? await precoLoja(loja.id, SERV) : P.valor;

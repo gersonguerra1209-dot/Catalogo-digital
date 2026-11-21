@@ -1,9 +1,11 @@
 // Indicação premiada: cada indicada pagando tira R$ 10 da mensalidade de quem indicou (máx. 2 → R$ 12,99).
 // Esta função confere o preço certo e, se mudou, avisa o Mercado Pago para cobrar o valor novo.
+// Chave secreta nova do Supabase (sb_secret_...) vai só no "apikey"; a antiga (JWT) vai nos dois.
+const chave = (k) => (String(k).startsWith("sb_") ? { apikey: k } : { apikey: k, Authorization: `Bearer ${k}` });
 const SUPA = "https://sbcotxamjsojtqbfkyhm.supabase.co";
 
 async function supa(path, SERV, opts = {}) {
-  const r = await fetch(`${SUPA}/rest/v1/${path}`, { ...opts, headers: { apikey: SERV, Authorization: `Bearer ${SERV}`, "Content-Type": "application/json", Prefer: "return=representation", ...(opts.headers || {}) } });
+  const r = await fetch(`${SUPA}/rest/v1/${path}`, { ...opts, headers: { ...chave(SERV), "Content-Type": "application/json", Prefer: "return=representation", ...(opts.headers || {}) } });
   const t = await r.text(); return { ok: r.ok, status: r.status, data: t ? JSON.parse(t) : null };
 }
 async function precoLoja(lojaId, SERV) {

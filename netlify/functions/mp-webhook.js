@@ -2,6 +2,8 @@
 // sempre perguntamos de novo ao próprio Mercado Pago antes de liberar a loja.
 const PLANOS = require("./_planos");
 const { ajustaPreco } = require("./_desconto");
+// Chave secreta nova do Supabase (sb_secret_...) vai só no "apikey"; a antiga (JWT) vai nos dois.
+const chave = (k) => (String(k).startsWith("sb_") ? { apikey: k } : { apikey: k, Authorization: `Bearer ${k}` });
 const SUPA = "https://sbcotxamjsojtqbfkyhm.supabase.co";
 const ok = { statusCode: 200, body: "ok" };
 
@@ -11,7 +13,7 @@ async function mp(path, MP) {
   return r.json();
 }
 async function supa(path, SERV, opts = {}) {
-  const r = await fetch(`${SUPA}/rest/v1/${path}`, { ...opts, headers: { apikey: SERV, Authorization: `Bearer ${SERV}`, "Content-Type": "application/json", Prefer: "return=representation", ...(opts.headers || {}) } });
+  const r = await fetch(`${SUPA}/rest/v1/${path}`, { ...opts, headers: { ...chave(SERV), "Content-Type": "application/json", Prefer: "return=representation", ...(opts.headers || {}) } });
   const t = await r.text(); return { ok: r.ok, status: r.status, data: t ? JSON.parse(t) : null };
 }
 function somaMeses(dataISO, meses) {
