@@ -1,7 +1,10 @@
 // "Aplicativo" de cada loja: quando o cliente instala, o ícone fica com o nome da loja e abre direto nela.
 const { supa } = require("./_base");
 exports.handler = async (event) => {
-  const slug = String((event.queryStringParameters || {}).slug || "").toLowerCase();
+  // o nome da loja pode vir em ?slug= ou no próprio endereço (/m/nome-da-loja)
+  const q = (event.queryStringParameters || {}).slug;
+  const pelaUrl = String(event.rawUrl || event.path || "").match(/\/m\/([a-z0-9-]{3,40})/i);
+  const slug = String((/^[a-z0-9-]{3,40}$/i.test(q || "") ? q : (pelaUrl && pelaUrl[1])) || "").toLowerCase();
   let nome = "Catálogo", icone = "";
   if (/^[a-z0-9-]{3,40}$/.test(slug)) {
     try { const r = await supa(`lojas?slug=eq.${slug}&select=nome,icone_url`); if (r[0] && r[0].nome) nome = r[0].nome; if (r[0] && r[0].icone_url) icone = r[0].icone_url; } catch (e) {}

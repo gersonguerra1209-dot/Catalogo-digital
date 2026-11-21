@@ -14,7 +14,7 @@
 (function () {
   var q = new URLSearchParams(location.search).get("l");
   var s = (q || decodeURIComponent(location.pathname.split("/").filter(Boolean)[0] || "")).toLowerCase();
-  if (/^[a-z0-9-]{3,40}$/.test(s)) { var l = document.createElement("link"); l.rel = "manifest"; l.href = "/m/" + s; document.head.appendChild(l); }
+  if (/^[a-z0-9-]{3,40}$/.test(s)) { var l = document.createElement("link"); l.rel = "manifest"; l.href = "/.netlify/functions/manifest?slug=" + encodeURIComponent(s); document.head.appendChild(l); }
   window.__instalar = null;
   window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); window.__instalar = e; var b = document.getElementById("instBox"); if (b) b.style.display = ""; });
 })();
@@ -292,15 +292,44 @@ function preparaInstalar() {
   if (!document.querySelector('meta[name="apple-mobile-web-app-title"]')) document.head.insertAdjacentHTML("beforeend", `<meta name="apple-mobile-web-app-title" content="${esc(L.nome)}">`);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
   if (matchMedia("(display-mode: standalone)").matches || navigator.standalone) return; // já está instalada
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const ua = navigator.userAgent, ios = /iphone|ipad|ipod/i.test(ua), android = /android/i.test(ua);
+  const dentroDeApp = /instagram|fban|fbav|fb_iab|tiktok|line\/|wv\)/i.test(ua); // navegador de dentro do Instagram/Facebook
   const dica = t => { $("instTxt").innerHTML = t; };
-  if (window.__instalar) $("instBox").style.display = "";
-  else if (ios) { $("instBox").style.display = ""; dica('No iPhone: toque em <b>Compartilhar</b> ⬆️ e depois em <b>"Adicionar à Tela de Início"</b>.'); $("instBtn").style.display = "none"; }
-  $("instBtn").onclick = async () => {
-    if (!window.__instalar) return dica('Toque nos <b>3 pontinhos ⋮</b> do navegador e depois em <b>"Adicionar à tela inicial"</b>.');
-    window.__instalar.prompt(); const r = await window.__instalar.userChoice; window.__instalar = null;
-    if (r.outcome === "accepted") $("instBox").innerHTML = "<b>✅ Loja salva no seu celular!</b>";
-  };
+  $("instBox").style.display = ""; // o quadro aparece sempre, para todo cliente
+
+  if (dentroDeApp && android) {
+    dica("Para instalar, abra a loja no <b>Chrome</b>. É só tocar no botão abaixo.");
+    $("instBtn").textContent = "🌐 Abrir no Chrome para instalar";
+    $("instBtn").onclick = () => { location.href = `intent://${location.host}${location.pathname}#Intent;scheme=https;package=com.android.chrome;end`; };
+  } else if (dentroDeApp && ios) {
+    dica('Toque nos <b>⋯</b> lá em cima e em <b>"Abrir no navegador"</b>. Depois toque em <b>Compartilhar</b> ⬆️ e <b>"Adicionar à Tela de Início"</b>.');
+    $("instBtn").style.display = "none";
+  } else if (ios) {
+    dica('No iPhone: toque em <b>Compartilhar</b> ⬆️ e depois em <b>"Adicionar à Tela de Início"</b>.');
+    $("instBtn").style.display = "none";
+  } else {
+    $("instBtn").onclick = async () => {
+      if (!window.__instalar) return dica('Toque nos <b>3 pontinhos ⋮</b> do navegador e depois em <b>"Instalar app"</b> ou <b>"Adicionar à tela inicial"</b>.');
+      window.__instalar.prompt(); const r = await window.__instalar.userChoice; window.__instalar = null;
+      if (r.outcome === "accepted") { $("instBox").innerHTML = "<b>✅ Loja salva no seu celular!</b>"; const b = $("instBarra"); if (b) b.remove(); }
+    };
+  }
+
+  // faixa no topo, 1 vez por dia, chamando para instalar
+  let visto = ""; try { visto = localStorage.getItem("inst_" + L.slug) || ""; } catch (e) {}
+  if (visto === new Date().toDateString()) return;
+  setTimeout(() => {
+    const bar = document.createElement("div"); bar.id = "instBarra";
+    bar.style.cssText = "position:fixed;left:10px;right:10px;top:10px;z-index:50;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;background:#1a1226;border:1px solid #f3c96b;box-shadow:0 10px 30px -8px #000;font-size:13px";
+    bar.innerHTML = `<img src="${esc(L.icone_url || L.logo_url || "/icons/icon-192.png")}" style="width:38px;height:38px;border-radius:10px;object-fit:cover">
+      <div style="flex:1"><b>Instale a ${esc(L.nome)}</b><br><span style="color:var(--mut)">Ícone na sua tela, igual aplicativo</span></div>
+      <button style="border:none;border-radius:20px;padding:9px 14px;font-family:inherit;font-weight:600;background:linear-gradient(135deg,#f3c96b,#e09a3a);color:#1a1020">Instalar</button>
+      <span style="cursor:pointer;padding:4px 6px;color:var(--mut)">✕</span>`;
+    const fecha = () => { bar.remove(); try { localStorage.setItem("inst_" + L.slug, new Date().toDateString()); } catch (e) {} };
+    bar.querySelector("span:last-child").onclick = fecha;
+    bar.querySelector("button").onclick = () => { fecha(); if (window.__instalar || (dentroDeApp && android)) $("instBtn").click(); else $("instBox").scrollIntoView({ behavior: "smooth", block: "center" }); };
+    document.body.appendChild(bar);
+  }, 4000);
 }
 
 // Promoção

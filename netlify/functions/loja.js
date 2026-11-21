@@ -2,7 +2,9 @@
 const { supa, origem, metas } = require("./_base");
 let cacheHtml = null, cacheEm = 0;
 exports.handler = async (event) => {
-  const slug = String((event.queryStringParameters || {}).slug || "").toLowerCase();
+  const q = (event.queryStringParameters || {}).slug;
+  const pelaUrl = String(event.path || "").split("/").filter(Boolean)[0];
+  const slug = String(q || (pelaUrl && !pelaUrl.startsWith(".netlify") ? pelaUrl : "") || "").toLowerCase();
   const base = origem(event);
   try {
     if (!cacheHtml || Date.now() - cacheEm > 300000) {
