@@ -31,6 +31,15 @@
   <section id="vNega" class="panel"><div class="centro"><div style="font-size:46px">⛔</div><p>Esta conta não é de mestre.</p><button class="btn ghost" id="sair1">Sair</button></div></section>
 
   <section id="vApp" class="panel">
+    <div class="box">
+      <h3>🔗 Link para novos clientes</h3>
+      <div class="linkbox"><span id="lkNovo" style="flex:1"></span></div>
+      <div class="acts" style="margin-top:10px">
+        <button class="btn gold" id="lkCopiar" style="padding:11px;font-size:13px">📋 Copiar link</button>
+        <a class="btn zap" id="lkZap" target="_blank" rel="noopener" style="padding:11px;font-size:13px">💬 Mandar no Zap</a>
+      </div>
+      <p class="note">A dona abre, cria a loja sozinha e ganha 4 dias grátis. A loja aparece aqui embaixo na hora.</p>
+    </div>
     <div class="kpis"><div class="kpi"><b id="tLojas">0</b><span>lojas</span></div><div class="kpi"><b id="tAtivas">0</b><span>ativas</span></div><div class="kpi"><b id="tVendas">0</b><span>vendas das lojas</span></div></div>
     <div class="box">
       <h3>➕ Nova loja</h3>
@@ -123,6 +132,15 @@ $("nCriar").onclick = async () => {
   $("nNome").value = $("nSlug").value = $("nZap").value = ""; carrega();
 };
 iniciar();
+
+// Link de cadastro para novas donas
+(function () {
+  const link = location.origin + "/comecar";
+  const msg = `Oi, tudo bem? 😊 Criei um catálogo digital para lojas de perfume: sua loja ganha um link com todos os perfumes e fotos, o cliente escolhe e o pedido chega direto no seu WhatsApp. Tem até roleta de prêmios.\n\nTeste 4 dias grátis, sem cartão:\n👉 ${link}`;
+  $("lkNovo").textContent = link;
+  $("lkZap").href = "https://wa.me/?text=" + encodeURIComponent(msg);
+  $("lkCopiar").onclick = async () => { try { await navigator.clipboard.writeText(link); toast("📋 Link copiado!"); } catch (e) { toast("Segure o dedo no link para copiar"); } };
+})();
 </script>
 </body>
 </html>

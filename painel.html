@@ -125,6 +125,12 @@
     <div class="box"><h3>📦 Pedidos</h3>
       <p style="font-size:12px;color:var(--mut);margin-bottom:6px">Quando o cliente comprar de verdade, toque em <b style="color:#5dfc9a">✅ Vendeu</b>. A venda conta no perfil da loja.</p>
       <div id="pedidos"></div></div>
+    <div class="box" id="fidBox">
+      <h3>⭐ Cartões fidelidade</h3>
+      <p style="font-size:12px;color:var(--mut);margin-bottom:8px">Os selos entram sozinhos quando você marca ✅ Vendeu. Vendeu no balcão? Carimbe na mão:</p>
+      <div style="display:flex;gap:8px"><input id="fdZap" inputmode="tel" placeholder="WhatsApp do cliente"><button class="mk" id="fdMais" style="margin:0;padding:0 14px;white-space:nowrap">⭐ +1 selo</button></div>
+      <div id="fdLista" style="margin-top:12px"></div>
+    </div>
   </section>
 
   <!-- PROMOÇÕES -->
@@ -144,6 +150,14 @@
       <div style="display:flex;gap:8px;margin-top:8px"><input id="rpNovo" maxlength="22" placeholder="Ex.: Brinde surpresa"><button class="mk" id="rpAdd" style="margin:0;padding:0 16px;font-size:16px">+</button></div>
       <p class="note">De 2 a 8 prêmios. Todas as fatias têm a mesma chance. Só prometa o que pode entregar.</p>
       <button class="btn gold" id="rpSalvar" style="margin-top:10px">💾 Salvar roleta</button>
+    </div>
+    <div class="box">
+      <h3>⭐ Cartão Fidelidade</h3>
+      <label class="chk"><input type="checkbox" id="fdOn"> Ligar o cartão fidelidade na loja</label>
+      <label>Quantas compras para ganhar o brinde?</label><input id="fdMeta" type="number" min="3" max="30" value="10">
+      <label>Qual é o brinde?</label><input id="fdBrinde" maxlength="40" placeholder="Ex.: Um decant de 10ml grátis">
+      <button class="btn gold" id="fdSalvar" style="margin-top:12px">⭐ Salvar cartão</button>
+      <p class="note">O cliente coloca o WhatsApp dele na loja. Cada vez que você marca <b>✅ Vendeu</b> num pedido dele, ele ganha 1 selo sozinho. Só prometa o brinde que pode entregar.</p>
     </div>
     <div class="box">
       <h3>🎟️ Conferir código de prêmio</h3>
@@ -232,7 +246,7 @@ function mostra(v) {
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.dataset.v === v));
   window.scrollTo(0, 0);
 }
-document.querySelectorAll(".tab").forEach(t => t.onclick = () => { mostra(t.dataset.v); if (t.dataset.v === "ped") carregaPedidos(); if (t.dataset.v === "ini") carregaStats(); if (t.dataset.v === "pro") carregaCupons(); });
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => { mostra(t.dataset.v); if (t.dataset.v === "ped") { carregaPedidos(); carregaFid(); } if (t.dataset.v === "ini") carregaStats(); if (t.dataset.v === "pro") carregaCupons(); });
 
 // ===== Autenticação =====
 let modoCriar = false;
@@ -465,7 +479,7 @@ async function carregaPedidos() {
   $("pedidos").innerHTML = D.length ? D.map(o => {
     const p = P.find(x => x.id === o.perfume_id);
     return `<div class="ord"><div class="mini" style="background:${TEMAS[(p || {}).tipo || "doce"].bg}">${p && p.foto_url ? `<img src="${esc(p.foto_url)}" alt="">` : "🧴"}</div>
-    <div style="flex:1;min-width:0"><b>${esc(o.perfume_nome)}</b><br><span>${esc(o.codigo)} • ${new Date(o.criado_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span></div>
+    <div style="flex:1;min-width:0"><b>${esc(o.perfume_nome)}</b><br>${o.cliente_zap ? `<span style="color:var(--gold)">⭐ ${zapBonito(o.cliente_zap)}</span><br>` : ""}<span>${esc(o.codigo)} • ${new Date(o.criado_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span></div>
     <div style="text-align:right"><b class="preco" style="font-size:13px">${brl(o.preco)}</b><br>
     ${o.status === "novo" ? `<button class="mk" data-id="${o.id}" data-s="vendido">✅ Vendeu</button> <button class="mk n" data-id="${o.id}" data-s="perdido">✖</button>` : o.status === "vendido" ? `<span style="color:#5dfc9a">✅ Vendido</span> <button class="mk n" data-id="${o.id}" data-s="novo">↩</button>` : `<span>✖ Não fechou</span> <button class="mk n" data-id="${o.id}" data-s="novo">↩</button>`}</div></div>`;
   }).join("") : `<p class="note" style="font-size:13px">Ainda sem pedidos. Divulgue o link da loja! 🚀</p>`;
@@ -474,15 +488,38 @@ $("pedidos").onclick = async e => {
   const b = e.target.closest(".mk"); if (!b) return;
   const { error } = await sb.from("pedidos").update({ status: b.dataset.s }).eq("id", b.dataset.id);
   if (error) return toast("⚠️ " + error.message);
-  if (b.dataset.s === "vendido") toast("🎉 Venda registrada!");
-  carregaPedidos(); carregaPerfumes();
+  if (b.dataset.s === "vendido") toast(L.fid_on ? "🎉 Venda registrada! Se o cliente tem cartão, ganhou 1 selo ⭐" : "🎉 Venda registrada!");
+  carregaPedidos(); carregaPerfumes(); carregaFid();
 };
+function zapBonito(z) { const d = String(z).replace(/\D/g, "").slice(-11); return d.length === 11 ? `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}` : d; }
+async function carregaFid() {
+  if (!L.fid_on) { $("fidBox").style.display = "none"; return; }
+  $("fidBox").style.display = "";
+  const { data } = await sb.from("fidelidade").select("*").eq("loja_id", L.id).order("selos", { ascending: false }).limit(100);
+  const meta = L.fid_meta || 10, F = data || [];
+  $("fdLista").innerHTML = F.length ? F.map(f => `<div class="ord" style="align-items:center">
+    <div style="flex:1;min-width:0"><b>${zapBonito(f.zap)}</b><br><span>${"⭐".repeat(Math.min(f.selos, meta))}${"☆".repeat(Math.max(0, meta - f.selos))} ${f.selos}/${meta}${f.brindes ? ` • 🎁 ${f.brindes} brinde${f.brindes > 1 ? "s" : ""}` : ""}</span></div>
+    <div style="text-align:right;white-space:nowrap">
+      ${f.selos >= meta ? `<button class="mk" data-z="${f.zap}" data-a="brinde">🎁 Entregar</button>` : ""}
+      <button class="mk" data-z="${f.zap}" data-a="mais">+1</button><button class="mk n" data-z="${f.zap}" data-a="menos">−1</button>
+      <a class="mk b" href="${waLink(f.zap, `Oi! Aqui é da ${L.nome} 💛 Você tem ${Math.min(f.selos, meta)} de ${meta} selos no seu cartão fidelidade. ${f.selos >= meta ? `Seu brinde (${L.fid_brinde}) está te esperando! 🎁` : `Faltam ${meta - f.selos} para ganhar: ${L.fid_brinde} 🎁`}`)}" target="_blank" rel="noopener" style="text-decoration:none">💬</a>
+    </div></div>`).join("") : `<p class="note" style="font-size:13px">Nenhum cliente com cartão ainda. Quando alguém pedir com o WhatsApp, aparece aqui.</p>`;
+}
+async function fidAcao(zap, acao) {
+  const { data, error } = await sb.rpc("dono_fidelidade", { p_loja: L.id, p_zap: zap, p_acao: acao });
+  if (error) return toast("⚠️ " + error.message);
+  toast(acao === "brinde" ? "🎁 Brinde entregue! Cartão recomeçou." : acao === "mais" ? `⭐ Selo carimbado! Agora tem ${data}` : `Selo tirado. Agora tem ${data}`);
+  carregaFid();
+}
+$("fdMais").onclick = () => { const z = $("fdZap").value; if (!z.trim()) return toast("Coloque o WhatsApp do cliente"); fidAcao(z, "mais"); $("fdZap").value = ""; };
+$("fdLista").onclick = e => { const b = e.target.closest("button[data-a]"); if (!b) return; if (b.dataset.a === "brinde" && !confirm("Entregou o brinde para este cliente?")) return; fidAcao(b.dataset.z, b.dataset.a); };
 
 // ===== Promoções e prêmios =====
 function preenchePromo() {
   $("prOn").checked = L.promo_on; $("prTit").value = L.promo_titulo;
   if (L.promo_fim) { const f = new Date(L.promo_fim); $("prFim").value = new Date(f - f.getTimezoneOffset() * 6e4).toISOString().slice(0, 16); }
   $("rpOn").checked = L.premios_on; PREMIOS = [...(L.premios || [])]; listaPremios();
+  $("fdOn").checked = !!L.fid_on; $("fdMeta").value = L.fid_meta || 10; $("fdBrinde").value = L.fid_brinde || "";
 }
 $("prSalvar").onclick = async () => {
   const f = new Date($("prFim").value);
@@ -497,6 +534,14 @@ function listaPremios() {
 }
 $("rpLista").onclick = e => { const b = e.target.closest(".mk"); if (!b) return; if (PREMIOS.length <= 2) return toast("Mínimo 2 prêmios"); PREMIOS.splice(+b.dataset.i, 1); listaPremios(); };
 $("rpAdd").onclick = () => { const v = $("rpNovo").value.trim(); if (!v) return; if (PREMIOS.length >= 8) return toast("Máximo 8 prêmios"); PREMIOS.push(v.slice(0, 22)); $("rpNovo").value = ""; listaPremios(); };
+$("fdSalvar").onclick = async () => {
+  const meta = Math.max(3, Math.min(30, parseInt($("fdMeta").value) || 10)), brinde = $("fdBrinde").value.trim();
+  if ($("fdOn").checked && !brinde) return toast("⚠️ Escreva qual é o brinde");
+  const dados = { fid_on: $("fdOn").checked, fid_meta: meta, fid_brinde: brinde };
+  const { error } = await sb.from("lojas").update(dados).eq("id", L.id);
+  if (error) return toast("⚠️ " + error.message);
+  Object.assign(L, dados); toast(dados.fid_on ? "⭐ Cartão fidelidade ligado!" : "Cartão desligado"); carregaFid();
+};
 $("rpSalvar").onclick = async () => {
   const dados = { premios_on: $("rpOn").checked, premios: PREMIOS };
   const { error } = await sb.from("lojas").update(dados).eq("id", L.id);

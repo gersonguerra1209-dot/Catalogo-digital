@@ -124,3 +124,41 @@ input[type=checkbox]{width:auto}
 .rodape{text-align:center;font-size:11px;color:#7d6f93;margin-top:26px}
 .prev{width:100%;border-radius:14px;margin-top:10px;display:block}
 .linkbox{display:flex;gap:8px;align-items:center;background:#0f0a17;border:1px solid #33284a;border-radius:12px;padding:10px;font-size:13px;word-break:break-all}
+
+/* ===== Vitrine premium (cliente) ===== */
+.vitrine{background:radial-gradient(120% 60% at 0% 0%,rgba(155,123,255,.16),transparent 60%),radial-gradient(100% 50% at 100% 30%,rgba(255,95,162,.12),transparent 60%),var(--bg);background-attachment:fixed}
+.vitrine .pcard,.vitrine .roleta,.vitrine .box,.vitrine .fidcard{background:linear-gradient(160deg,rgba(255,255,255,.075),rgba(255,255,255,.02));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(243,201,107,.22);box-shadow:0 18px 40px -22px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.06)}
+.vitrine .avatar{box-shadow:0 0 0 3px rgba(243,201,107,.35),0 0 36px -6px rgba(255,95,162,.55)}
+.vitrine .sec{color:#ffe6a6;text-shadow:0 0 18px rgba(243,201,107,.35)}
+/* contador com dígitos dourados */
+.vitrine .promo{background:linear-gradient(160deg,rgba(243,201,107,.14),rgba(0,0,0,.35));border:1px solid rgba(243,201,107,.5);box-shadow:0 0 24px -10px #f3c96b}
+.cdv{display:inline-flex;gap:3px;align-items:center}
+.cdv .dg{font-style:normal;display:inline-block;min-width:20px;padding:4px 3px;border-radius:6px;text-align:center;font-size:16px;font-weight:700;color:#2a1a05;background:linear-gradient(180deg,#fff1c4,#f3c96b 55%,#c99632);box-shadow:inset 0 -2px 0 rgba(0,0,0,.25),0 2px 6px -2px #000}
+.cdv .sp{font-style:normal;color:var(--gold);font-weight:700;padding:0 1px}
+/* roleta mais viva */
+.vitrine .wheel{box-shadow:0 0 0 4px rgba(255,255,255,.06),0 0 44px -4px var(--gold)}
+.vitrine #girar,.vitrine #girar2{animation:pulsa 1.8s ease-in-out infinite}
+@keyframes pulsa{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(243,201,107,.0)}50%{transform:scale(1.03);box-shadow:0 0 26px -2px rgba(243,201,107,.55)}}
+/* cartões de perfume com brilho */
+.vitrine .grid>*{position:relative;overflow:hidden}
+.vitrine .grid>*::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.14) 50%,transparent 65%);transform:translateX(-120%);animation:brilho 5s ease-in-out infinite;pointer-events:none}
+@keyframes brilho{0%,70%{transform:translateX(-120%)}85%,100%{transform:translateX(120%)}}
+/* cartão fidelidade */
+.fidcard{border-radius:22px;padding:16px;text-align:center}
+.fidtop{font-size:14px;color:#d6cbe6}
+.fidtop b{color:var(--gold)}
+.fidn{font-size:20px}
+.fidok{font-family:'Cormorant Garamond',serif;font-size:26px;color:#fff;margin-bottom:2px}
+.fidbrinde{margin:6px auto 12px;display:inline-block;padding:6px 14px;border-radius:30px;background:rgba(243,201,107,.12);border:1px dashed rgba(243,201,107,.6);color:#fff3cf;font-weight:600}
+.selos{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:300px;margin:0 auto 10px}
+.selo{aspect-ratio:1;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.18)}
+.selo.on{background:radial-gradient(circle at 35% 30%,#fff4cc,#f3c96b 45%,#b9862b);border:1px solid #ffe7a3;box-shadow:0 0 14px -3px #f3c96b;animation:carimbo .45s cubic-bezier(.2,1.6,.4,1) both}
+.selo.novo{animation:carimbo .6s cubic-bezier(.2,1.6,.4,1) both,brilhaSelo 1.4s ease-in-out .6s 3}
+@keyframes carimbo{0%{transform:scale(.2) rotate(-25deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes brilhaSelo{50%{box-shadow:0 0 26px 4px #f3c96b}}
+.fidbar{height:8px;border-radius:8px;background:rgba(255,255,255,.08);overflow:hidden;max-width:300px;margin:0 auto}
+.fidbar i{display:block;height:100%;border-radius:8px;background:linear-gradient(90deg,#f3c96b,#ff5fa2);transition:width 1s}
+/* confete */
+.confete{position:fixed;top:-12px;width:8px;height:14px;border-radius:2px;z-index:99;pointer-events:none;animation:cai linear forwards}
+@keyframes cai{to{top:105vh;transform:translateX(40px) rotate(720deg)}}
+@media (prefers-reduced-motion:reduce){.vitrine #girar,.vitrine #girar2,.vitrine .grid>*::after{animation:none}}
