@@ -68,6 +68,10 @@
   <!-- INÍCIO -->
   <section id="ini" class="panel">
     <div id="avisoPlano"></div>
+    <div class="box" id="hojeBox" style="display:none;border-color:#6b4f1e;background:linear-gradient(160deg,#1d1208,#140e1e)">
+      <h3>📅 Conteúdo de hoje</h3>
+      <div id="hojeLista"></div>
+    </div>
     <div class="box">
       <h3>🔗 Link da sua loja</h3>
       <div class="linkbox"><span id="linkTxt" style="flex:1"></span></div>
@@ -116,6 +120,11 @@
   <!-- PERFUMES -->
   <section id="per" class="panel">
     <button class="btn gold cta" id="novoPerf" style="margin-bottom:14px">➕ Adicionar perfume</button>
+    <div class="box">
+      <h3>🎬 Estúdio de Conteúdo</h3>
+      <p style="font-size:12px;color:#d6cbe6;margin-bottom:8px">Cada perfume tem um <b>código</b> (ex.: P-001) que guarda a história dele. Digite o código para continuar a série de posts de onde parou.</p>
+      <div style="display:flex;gap:8px"><input id="stCod" placeholder="P-001" style="text-transform:uppercase"><button class="mk b" id="stBusca" style="margin:0;padding:0 14px">Abrir</button></div>
+    </div>
     <div class="box"><h3>🧴 Meus perfumes</h3><div id="lista"></div>
       <p class="note">Esgotou: continua no catálogo com aviso, e o cliente pode pedir para ser avisado. Apagar: some de vez.</p></div>
   </section>
@@ -224,6 +233,24 @@
     <a class="btn" href="https://www.dola.com" target="_blank" rel="noopener" style="margin-top:8px;padding:11px;font-size:13px;background:#1c1529;border:1px solid #3a2e4d;color:#fff">2️⃣ Ou abrir o Dola</a>
     <p class="note">Tem o app do Dola instalado? Abra direto por ele, que fica mais rápido.</p>
   </div>
+  <div class="box" style="margin-top:12px;background:linear-gradient(160deg,#1d1208,#0f0a17);border-color:#6b4f1e">
+    <h3>🎬 Comercial "Aura" para Reels e Status</h3>
+    <p style="font-size:12px;color:#d6cbe6;line-height:1.5">Cria um comercial de luxo do perfume, no estilo <i>"A aura de quem usa..."</i>. Preencha nome, tipo e frase do cheiro abaixo. Depois:</p>
+    <p style="font-size:12px;color:#d6cbe6;line-height:1.7;margin-top:6px">1️⃣ <b>Copiar pedido do comercial</b> → cole no Gemini junto com a foto do perfume<br>2️⃣ Baixe a imagem que ele gerar<br>3️⃣ Toque em <b>Montar o comercial</b> e escolha essa imagem: o sistema coloca o título, o preço e a sua logo, e faz a <b>imagem</b> e o <b>vídeo</b> prontos para postar</p>
+    <div class="acts" style="margin-top:10px">
+      <button class="btn gold" id="auPedido" type="button" style="padding:11px;font-size:13px">1️⃣ Copiar pedido do comercial</button>
+      <a class="btn mapa" href="https://gemini.google.com/app" target="_blank" rel="noopener" style="padding:11px;font-size:13px">Abrir Gemini</a>
+    </div>
+    <label style="margin-top:10px">3️⃣ Imagem que o Gemini gerou</label><input type="file" id="auImg" accept="image/*">
+    <label>Título do comercial</label><input id="auTit" maxlength="40" placeholder="A aura de quem usa ...">
+    <canvas id="auPrev" class="prev" style="display:none;aspect-ratio:9/16;max-height:520px;object-fit:contain"></canvas>
+    <div class="acts" id="auBtns" style="margin-top:10px;display:none">
+      <button class="btn gold" id="auFoto" type="button" style="padding:11px;font-size:13px">🖼️ Baixar imagem</button>
+      <button class="btn zap" id="auVideo" type="button" style="padding:11px;font-size:13px">🎬 Gerar vídeo (8s)</button>
+    </div>
+    <button class="btn ghost" id="auLegenda" type="button" style="margin-top:8px;padding:11px;font-size:13px">✍️ Copiar legenda pronta do post</button>
+    <p class="note" id="auMsg"></p>
+  </div>
   <label>Nome</label><input id="pfNome" maxlength="60" placeholder="Ex.: Flor de Cacau">
   <label>Preço (R$)</label><input id="pfPreco" type="number" step="0.01" min="0" inputmode="decimal" placeholder="89.90">
   <label>Tipo de cheiro</label>
@@ -233,6 +260,49 @@
   <label class="chk"><input type="checkbox" id="pfRoleta" checked> Aparece na Roleta do perfume</label>
   <button class="btn gold" id="pfSalvar" style="margin-top:10px">✨ Salvar perfume</button>
   <button class="btn ghost" id="pfCancelar">Cancelar</button>
+</div></div></div>
+
+<!-- Estúdio de Conteúdo -->
+<div class="modal" id="stModal"><div class="sheet"><div class="sbody">
+  <div style="display:flex;gap:12px;align-items:center">
+    <div class="mini" id="stFoto" style="width:64px;height:64px;flex:none"></div>
+    <div style="flex:1;min-width:0"><span class="codchip" id="stCodigo"></span><h2 id="stNome" style="margin:4px 0 0"></h2><span id="stSerie" style="font-size:12px;color:var(--mut)"></span></div>
+  </div>
+  <details class="box" style="margin-top:12px;background:#0f0a17" id="stDnaBox">
+    <summary style="cursor:pointer;font-weight:600">🧬 DNA do perfume (a história que se repete em todos os posts)</summary>
+    <label>Quem usa (o público e o estilo de vida)</label><input id="dnPersona" maxlength="120">
+    <label>Cores da campanha</label><input id="dnPaleta" maxlength="120">
+    <label>Cenas do mundo desse perfume (uma por linha)</label><textarea id="dnCenas" rows="4" maxlength="600"></textarea>
+    <label>Frase de impacto</label><input id="dnFrase" maxlength="80">
+    <label>Notas do cheiro (ingredientes)</label><input id="dnNotas" maxlength="160">
+    <button class="btn gold" id="dnSalvar" type="button" style="margin-top:10px;padding:11px;font-size:13px">🧬 Salvar DNA</button>
+    <p class="note">O DNA vem pronto pelo tipo do cheiro. Mude o que quiser: todos os pedidos para a IA passam a seguir essa história.</p>
+  </details>
+  <div class="box" style="background:#0f0a17">
+    <h3>🗓️ Série de posts</h3>
+    <label>Ritmo da loja</label>
+    <select id="stFreq"><option value="1">1 post por dia</option><option value="2">1 post a cada 2 dias</option><option value="3">1 post a cada 3 dias</option><option value="7">1 post por semana</option></select>
+    <div id="stPecas" style="margin-top:10px"></div>
+  </div>
+  <div class="box" id="stMonta" style="background:#0f0a17">
+    <h3 id="stPecaTit"></h3>
+    <p style="font-size:12px;color:#d6cbe6;line-height:1.7">1️⃣ Copie o pedido e cole no <b>Gemini</b> ou no <b>Dola</b>, junto com a foto do perfume<br>2️⃣ Baixe a imagem que a IA gerar e escolha ela aqui<br>3️⃣ Baixe a imagem ou o vídeo prontos e poste<br>4️⃣ Toque em <b>✅ Postei</b> para a série andar</p>
+    <div class="acts" style="margin-top:10px">
+      <button class="btn gold" id="stCopiar" type="button" style="padding:11px;font-size:13px">1️⃣ Copiar pedido</button>
+      <a class="btn mapa" href="https://gemini.google.com/app" target="_blank" rel="noopener" style="padding:11px;font-size:13px">Abrir Gemini</a>
+    </div>
+    <label style="margin-top:10px">2️⃣ Imagem gerada pela IA</label><input type="file" id="stImg" accept="image/*">
+    <label>Título</label><input id="stTit" maxlength="40">
+    <canvas id="stPrev" class="prev" style="display:none;aspect-ratio:9/16;max-height:520px;object-fit:contain"></canvas>
+    <div class="acts" id="stBtns" style="margin-top:10px;display:none">
+      <button class="btn gold" id="stBaixa" type="button" style="padding:11px;font-size:13px">🖼️ Baixar imagem</button>
+      <button class="btn zap" id="stVideo" type="button" style="padding:11px;font-size:13px">🎬 Gerar vídeo (8s)</button>
+    </div>
+    <button class="btn ghost" id="stLegenda" type="button" style="margin-top:8px;padding:11px;font-size:13px">✍️ Copiar legenda</button>
+    <button class="btn zap" id="stPostei" type="button" style="margin-top:8px">✅ Postei esta peça</button>
+    <p class="note" id="stMsg"></p>
+  </div>
+  <button class="btn ghost" id="stFechar" type="button">Fechar</button>
 </div></div></div>
 
 <script>
@@ -369,13 +439,14 @@ async function carregaStats() {
 // ===== Perfumes =====
 async function carregaPerfumes() {
   const { data } = await sb.from("perfumes").select("*").eq("loja_id", L.id).order("criado_em", { ascending: false });
-  P = data || []; listaPerfumes(); $("kPer").textContent = P.length;
+  P = data || []; listaPerfumes(); $("kPer").textContent = P.length; conteudoHoje();
 }
 function listaPerfumes() {
   $("lista").innerHTML = P.length ? P.map(p => `<div class="ord"><div class="mini" style="background:${TEMAS[p.tipo].bg}">${p.foto_url ? `<img src="${esc(p.foto_url)}" alt="">` : frasco(p.tipo, "l" + p.id.slice(0, 6))}</div>
-    <div style="flex:1;min-width:0"><b>${esc(p.nome)}</b> <span style="color:var(--gold)">${brl(p.preco)}</span><br><span>${p.esgotado ? `⛔ Esgotado${p.avise ? ` • 🔔 ${p.avise} querem ser avisados` : ""}` : "✅ Disponível"} • 🛍️ ${p.vendidos}</span></div>
+    <div style="flex:1;min-width:0"><span class="codchip">${esc(p.codigo || "")}</span> <b>${esc(p.nome)}</b> <span style="color:var(--gold)">${brl(p.preco)}</span><br><span>${p.esgotado ? `⛔ Esgotado${p.avise ? ` • 🔔 ${p.avise} querem ser avisados` : ""}` : "✅ Disponível"} • 🛍️ ${p.vendidos}</span></div>
     <div style="text-align:right;display:flex;flex-direction:column;gap:2px">
       <button class="mk b" data-a="edit" data-id="${p.id}">Editar</button>
+      <button class="mk" data-a="st" data-id="${p.id}" style="background:linear-gradient(135deg,#f3c96b,#e09a3a);color:#1a1020">🎬 Conteúdo</button>
       ${p.esgotado ? `<button class="mk" data-a="volta" data-id="${p.id}">Chegou</button>` : `<button class="mk y" data-a="esg" data-id="${p.id}">Esgotou</button>`}
       <button class="mk r" data-a="del" data-id="${p.id}">Apagar</button></div></div>`).join("") : `<p class="note" style="font-size:13px">Nenhum perfume ainda. Toque em ➕ Adicionar perfume.</p>`;
 }
@@ -383,6 +454,7 @@ let delPend = null;
 $("lista").onclick = async e => {
   const b = e.target.closest(".mk"); if (!b) return; const p = P.find(x => x.id === b.dataset.id); if (!p) return;
   if (b.dataset.a === "edit") return abrirForm(p);
+  if (b.dataset.a === "st") return abrirEstudio(p);
   if (b.dataset.a === "esg" || b.dataset.a === "volta") {
     const esg = b.dataset.a === "esg";
     const { error } = await sb.from("perfumes").update(esg ? { esgotado: true } : { esgotado: false, avise: 0 }).eq("id", p.id);
@@ -404,6 +476,7 @@ function abrirForm(p) {
   editId = p ? p.id : null; fotoIm = null;
   $("pfTit").textContent = p ? "Editar perfume" : "Novo perfume";
   $("pfFoto").value = ""; $("pfPrev").style.display = "none";
+  AU_IM = null; $("auImg").value = ""; $("auTit").value = ""; $("auPrev").style.display = "none"; $("auBtns").style.display = "none"; $("auMsg").textContent = "";
   $("pfNome").value = p ? p.nome : ""; $("pfPreco").value = p ? p.preco : ""; $("pfTipo").value = p ? p.tipo : "doce";
   $("pfDesc").value = p ? p.descricao : ""; $("pfNovo").checked = p ? p.novo : true; $("pfRoleta").checked = p ? p.na_roleta : true;
   if (p && p.foto_url) { $("pfAtual").src = p.foto_url; $("pfAtual").style.display = ""; } else $("pfAtual").style.display = "none";
@@ -424,6 +497,254 @@ function desenhaPrev() {
   cv.width = src.width; cv.height = src.height; x.drawImage(src, 0, 0); cv.style.display = "";
 }
 const ESTILO = { doce: "doce", amadeirado: "amadeirado", fresco: "fresco", noturno: "noturno e intenso" };
+// ===== Comercial "Aura" =====
+const AURA = {
+  amadeirado: { quem: "um homem bem-sucedido e confiante", cenas: ["mão masculina com relógio de pulso clássico prateado ao lado de um copo de whisky com gelo, sobre mesa de mármore preto", "escritório executivo no alto de um prédio à noite, homem de terno de costas olhando as luzes da cidade pela janela", "garagem de luxo com carros esportivos escuros e brilhantes, mão segurando uma chave de carro", "jantar elegante à luz de velas, taça de vinho tinto, clima sofisticado"], cor: "âmbar, dourado, preto e madeira escura", frase: "Presença que fica na sala depois que você sai." },
+  doce: { quem: "uma mulher elegante, feminina e marcante", cenas: ["mão feminina com unhas impecáveis e pulseira dourada segurando uma taça de champanhe rosé", "penteadeira de luxo com joias, pétalas de rosa e espelho iluminado", "jantar ao pôr do sol num terraço com vista para o mar e luzes douradas", "vestido de festa e salto alto ao lado de flores rosas, clima de evento de gala"], cor: "rosa, dourado, nude e branco perolado", frase: "Doce na primeira nota. Inesquecível na última." },
+  fresco: { quem: "uma pessoa livre, leve e de bem com a vida", cenas: ["iate branco navegando em mar azul-turquesa cristalino", "camisa de linho branca, óculos de sol e toalha numa espreguiçadeira à beira de uma piscina de borda infinita", "gotas de água e ondas transparentes sob o sol da manhã", "varanda de frente para o mar com café da manhã e luz natural"], cor: "azul-turquesa, branco, prata e verde-água", frase: "Cheiro de quem acordou de bem com a vida." },
+  noturno: { quem: "alguém misterioso, sedutor e magnético", cenas: ["área VIP de uma festa noturna elegante com luzes neon roxas e taças brilhando", "carro de luxo escuro na rua molhada da cidade à noite, refletindo luzes", "mesa com velas, vinho tinto e rosas vermelhas em ambiente escuro", "silhueta de terno ou vestido preto numa varanda com a cidade iluminada ao fundo"], cor: "roxo profundo, preto, prata e vermelho vinho", frase: "A noite é sua. O perfume também." }
+};
+function tituloAura() { return ($("auTit").value.trim() || `A aura de quem usa ${$("pfNome").value.trim() || "este perfume"}`).slice(0, 40); }
+function dadosForm() { return { nome: $("pfNome").value.trim(), preco: parseFloat($("pfPreco").value), tipo: $("pfTipo").value, titulo: tituloAura() }; }
+function pedidoAura() {
+  const tipo = $("pfTipo").value, A = AURA[tipo] || AURA.doce, nome = $("pfNome").value.trim() || "o perfume", desc = $("pfDesc").value.trim();
+  return [
+    "Você é diretor de arte de campanhas de perfumes de luxo para Instagram (Reels e Stories). Crie UMA imagem vertical 9:16 em formato de COLAGEM com 4 quadros (2 em cima e 2 embaixo), estilo \"lifestyle de luxo\", mostrando a vida de quem usa este perfume.",
+    "",
+    `QUEM USA: ${A.quem}.`,
+    "",
+    "OS 4 QUADROS:",
+    ...A.cenas.map((c, i) => `${i + 1}. ${c}`),
+    "",
+    "O PERFUME (foto anexada): coloque o frasco GRANDE no CENTRO da colagem, por cima dos 4 quadros, como herói do anúncio, com sombra e brilho realistas. Mantenha o frasco, a tampa, o rótulo, o nome e as cores EXATAMENTE como no original. Não invente outra marca e não deforme o frasco.",
+    "",
+    `CLIMA: cinematográfico, luxuoso e aspiracional. Paleta: ${A.cor}. Luz dramática, reflexos no vidro, nitidez máxima, aparência de foto real de campanha.`,
+    "",
+    "DEIXE ESPAÇO VAZIO na parte de baixo da imagem (cerca de 25% da altura), mais escuro, para eu colocar o título depois.",
+    "",
+    "NÃO COLOQUE: nenhum texto escrito, logotipos ou marcas reais (de carros, relógios, cartões, bebidas ou roupas), marcas d'água, nem rostos de pessoas famosas.",
+    "",
+    `Inspiração do cheiro: ${nome}${desc ? " — " + desc : ""}.`
+  ].join("\n");
+}
+function legendaAura() {
+  const tipo = $("pfTipo").value, A = AURA[tipo] || AURA.doce, nome = $("pfNome").value.trim() || "este perfume", preco = parseFloat($("pfPreco").value);
+  const link = L ? `${location.origin}/${L.slug}` : "";
+  return `✨ ${tituloAura()} ✨\n\n${A.frase}\n${$("pfDesc").value.trim() ? "\n🧴 " + $("pfDesc").value.trim() + "\n" : ""}${preco ? `\n💰 ${brl(preco)}` : ""}\n📲 Peça pelo catálogo: ${link}\n💬 Ou chame no WhatsApp\n\n#perfume #perfumaria #${nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "")} #perfumeimportado #fonteboa #amazonas`;
+}
+let AU_IM = null, AU_LOGO = null;
+function carregaLogoAura() {
+  return new Promise(ok => {
+    if (AU_LOGO !== null || !L || !(L.icone_url || L.logo_url)) return ok(AU_LOGO);
+    const im = new Image(); im.crossOrigin = "anonymous";
+    im.onload = () => { AU_LOGO = im; ok(im); }; im.onerror = () => { AU_LOGO = false; ok(null); };
+    im.src = (L.icone_url || L.logo_url) + "?au=1";
+  });
+}
+// desenha um quadro do comercial; t vai de 0 a 1 (animação)
+function quadroAura(cv, t, d = dadosForm(), im = AU_IM) {
+  const W = 1080, H = 1920, x = cv.getContext("2d");
+  cv.width = W; cv.height = H;
+  x.fillStyle = "#07050c"; x.fillRect(0, 0, W, H);
+  // imagem com zoom lento (efeito Ken Burns)
+  const z = 1.0 + 0.08 * t, k = Math.max(W / im.width, H / im.height) * z, w = im.width * k, h = im.height * k;
+  x.drawImage(im, (W - w) / 2, (H - h) / 2 - 30 * t, w, h);
+  // escurece a base para o texto
+  const g = x.createLinearGradient(0, H * 0.55, 0, H); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.88)");
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  const ap = v => Math.max(0, Math.min(1, v));
+  // título
+  const a1 = ap((t - 0.12) / 0.18);
+  x.save(); x.globalAlpha = a1; x.textAlign = "center"; x.fillStyle = "#fff"; x.shadowColor = "rgba(0,0,0,.7)"; x.shadowBlur = 18;
+  x.font = "700 78px Poppins, sans-serif";
+  const palavras = String(d.titulo || "").split(" "), linhas = []; let l = "";
+  for (const p of palavras) { const tt = l ? l + " " + p : p; if (x.measureText(tt).width > W - 120 && l) { linhas.push(l); l = p; } else l = tt; }
+  linhas.push(l);
+  const y0 = H - 430 - (linhas.length - 1) * 90 + (1 - a1) * 40;
+  linhas.forEach((li, i) => x.fillText(li, W / 2, y0 + i * 90));
+  x.restore();
+  // linha dourada
+  const a2 = ap((t - 0.3) / 0.15);
+  x.save(); x.globalAlpha = a2; const gl = x.createLinearGradient(W / 2 - 200, 0, W / 2 + 200, 0); gl.addColorStop(0, "rgba(243,201,107,0)"); gl.addColorStop(.5, "#f3c96b"); gl.addColorStop(1, "rgba(243,201,107,0)");
+  x.fillStyle = gl; x.fillRect(W / 2 - 200 * a2, H - 300, 400 * a2, 4); x.restore();
+  // preço + chamada
+  const a3 = ap((t - 0.42) / 0.18), preco = d.preco;
+  x.save(); x.globalAlpha = a3; x.textAlign = "center";
+  if (preco) { x.font = "700 64px Poppins, sans-serif"; x.fillStyle = "#f3c96b"; x.fillText(brl(preco), W / 2, H - 205); }
+  x.font = "500 38px Poppins, sans-serif"; x.fillStyle = "#e9dcff"; x.fillText("📲 Peça pelo link da bio", W / 2, H - 130);
+  x.restore();
+  // logo e nome da loja no topo
+  x.save(); x.globalAlpha = ap(t / 0.15);
+  if (AU_LOGO) { x.save(); x.beginPath(); x.arc(110, 120, 56, 0, Math.PI * 2); x.closePath(); x.fillStyle = "#fff"; x.fill(); x.clip(); x.drawImage(AU_LOGO, 54, 64, 112, 112); x.restore(); x.strokeStyle = "#f3c96b"; x.lineWidth = 5; x.beginPath(); x.arc(110, 120, 58, 0, Math.PI * 2); x.stroke(); }
+  x.textAlign = "left"; x.fillStyle = "#fff"; x.shadowColor = "rgba(0,0,0,.8)"; x.shadowBlur = 12; x.font = "600 40px Poppins, sans-serif";
+  x.fillText(L ? L.nome : "", AU_LOGO ? 190 : 60, 135); x.restore();
+  // brilho que passa
+  const sx = (t * 1.6 - 0.3) * W;
+  x.save(); x.globalCompositeOperation = "lighter"; const gs = x.createLinearGradient(sx - 160, 0, sx + 160, 0);
+  gs.addColorStop(0, "rgba(255,255,255,0)"); gs.addColorStop(.5, "rgba(255,240,200,.10)"); gs.addColorStop(1, "rgba(255,255,255,0)");
+  x.fillStyle = gs; x.fillRect(0, 0, W, H); x.restore();
+}
+async function montaAura() {
+  if (!AU_IM) return;
+  await carregaLogoAura();
+  const cv = $("auPrev"); quadroAura(cv, 1); cv.style.display = "block"; $("auBtns").style.display = "";
+}
+function baixa(blob, nome) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000); }
+function nomeArq(ext, nome = $("pfNome").value.trim()) { return ("comercial-" + (nome || "perfume")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-") + "." + ext; }
+async function videoAura(d = dadosForm(), im = AU_IM, btn = $("auVideo"), msg = $("auMsg")) {
+  if (!im || !window.MediaRecorder) return toast("Seu celular não grava vídeo por aqui. Use a imagem 🖼️");
+  const tipos = ["video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp9", "video/webm"], tipo = tipos.find(t => MediaRecorder.isTypeSupported(t));
+  if (!tipo) return toast("Seu celular não grava vídeo por aqui. Use a imagem 🖼️");
+  const cv = document.createElement("canvas"); quadroAura(cv, 0, d, im);
+  const st = cv.captureStream(30), rec = new MediaRecorder(st, { mimeType: tipo, videoBitsPerSecond: 6000000 }), partes = [];
+  rec.ondataavailable = e => e.data.size && partes.push(e.data);
+  const b = btn; b.disabled = true; msg.textContent = "🎬 Gravando o vídeo... (8 segundos, não saia da tela)";
+  rec.onstop = () => {
+    b.disabled = false; const ext = tipo.includes("mp4") ? "mp4" : "webm";
+    baixa(new Blob(partes, { type: tipo.split(";")[0] }), nomeArq(ext, d.nome));
+    msg.innerHTML = ext === "mp4" ? "✅ Vídeo baixado! Poste no Reels ou no Status." : "✅ Vídeo baixado (formato WebM). Se o Instagram não aceitar, use a imagem 🖼️ e coloque música no próprio app.";
+  };
+  rec.start(); const D = 8000, ini = performance.now();
+  (function anima() { const t = Math.min(1, (performance.now() - ini) / D); quadroAura(cv, t, d, im); if (t < 1) requestAnimationFrame(anima); else setTimeout(() => rec.stop(), 150); })();
+}
+$("auPedido").onclick = async () => {
+  if (!$("pfNome").value.trim()) return toast("Escreva o nome do perfume primeiro 😉");
+  try { await navigator.clipboard.writeText(pedidoAura()); toast("📋 Pedido do comercial copiado! Cole no Gemini com a foto do perfume."); } catch (e) { toast("Não consegui copiar. Tente de novo."); }
+};
+$("auLegenda").onclick = async () => { try { await navigator.clipboard.writeText(legendaAura()); toast("✍️ Legenda copiada! Cole no post."); } catch (e) { toast("Não consegui copiar."); } };
+$("auImg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { AU_IM = await carregaImagem(f); montaAura(); } catch (er) { toast("⚠️ " + er.message); }
+};
+["pfNome", "pfPreco", "pfTipo", "auTit"].forEach(id => $(id).addEventListener("input", () => AU_IM && montaAura()));
+$("auFoto").onclick = () => $("auPrev").toBlob(b => { baixa(b, nomeArq("png")); $("auMsg").textContent = "✅ Imagem baixada! Poste no Status, Stories ou Reels."; }, "image/png");
+$("auVideo").onclick = () => videoAura();
+
+// ===== Estúdio de Conteúdo: série de 7 peças por perfume =====
+const PECAS = [
+  { id: "aura", n: "🎬 A aura de quem usa", tit: d => `A aura de quem usa ${d.nome}`,
+    p: (d, D) => `Crie UMA imagem vertical 9:16 em formato de COLAGEM com 4 quadros (2 em cima, 2 embaixo), estilo lifestyle de luxo, mostrando a vida de quem usa este perfume. Os 4 quadros: ${D.cenas.slice(0, 4).map((c, i) => `(${i + 1}) ${c}`).join(" ")}. Coloque o frasco GRANDE no CENTRO, por cima dos quadros, como herói do anúncio.` },
+  { id: "close", n: "💎 Close de luxo", tit: () => "Cada detalhe conta.",
+    p: () => `Crie uma foto MACRO vertical 9:16 do frasco: close extremo mostrando o vidro, a tampa e o rótulo, com gotas de perfume escorrendo, luz dourada lateral e reflexos brilhantes. Fundo escuro e desfocado com partículas de luz.` },
+  { id: "notas", n: "🌿 As notas do cheiro", tit: d => `O segredo do ${d.nome}`,
+    p: (d, D) => `Crie uma imagem vertical 9:16 com o frasco no centro, cercado pelos ingredientes reais do cheiro, arrumados de forma artística e flutuando ao redor: ${D.notas || "flores, especiarias e madeiras"}. Luz de estúdio, gotas e um leve vapor perfumado no ar.` },
+  { id: "momento", n: "🕴️ O momento de usar", tit: (d, D) => D.frase,
+    p: (d, D) => `Crie uma imagem vertical 9:16 de ${D.persona} se arrumando para sair, no cenário: ${D.cenas[1] || D.cenas[0]}. Mostre só as mãos, o pescoço ou a silhueta, SEM mostrar o rosto. O frasco aparece em destaque no primeiro plano, nítido.` },
+  { id: "kit", n: "🧳 Kit do dia", tit: d => `Kit do dia: ${d.nome}`,
+    p: (d, D) => `Crie uma foto FLAT LAY (vista de cima) vertical 9:16: o frasco no centro, cercado por objetos do estilo de vida de ${D.persona} (acessórios, roupas dobradas, óculos, joias ou relógio sem marca, flores, café ou bebida), tudo organizado com elegância sobre uma superfície luxuosa.` },
+  { id: "vitrine", n: "🏛️ Vitrine da loja", tit: () => `Disponível na ${L ? L.nome : "loja"}`,
+    p: () => `Crie uma imagem vertical 9:16 do frasco sozinho sobre um pedestal de mármore numa vitrine de luxo, com holofote de cima, fumaça leve no chão e o fundo com as cores da campanha. Visual de loja de alto padrão.` },
+  { id: "chamada", n: "🔥 Story de chamada", tit: () => "Peça o seu hoje ✨",
+    p: () => `Crie uma imagem vertical 9:16 minimalista e impactante: o frasco no terço de cima, com um brilho atrás dele, e a metade de baixo da imagem limpa e escura para eu escrever a chamada. Aparência de story de lançamento.` }
+];
+function dnaPadrao(p) {
+  const A = AURA[p.tipo] || AURA.doce;
+  return { persona: A.quem, paleta: A.cor, cenas: [...A.cenas], frase: A.frase, notas: p.descricao || "" };
+}
+function dnaDe(p) { const d = p.dna || {}, base = dnaPadrao(p); return { ...base, ...Object.fromEntries(Object.entries(d).filter(([k, v]) => Array.isArray(v) ? v.length : v)) }; }
+function pedidoPeca(p, k) {
+  const D = dnaDe(p), pc = PECAS[k], d = { nome: p.nome };
+  return [
+    `Você é diretor de arte de uma campanha de perfume para Instagram. Esta é a peça ${k + 1} de ${PECAS.length} da série do perfume ${p.codigo} — "${p.nome}". Todas as peças da série precisam parecer da MESMA campanha.`,
+    "",
+    "DNA DA CAMPANHA (siga sempre):",
+    `• Quem usa: ${D.persona}`,
+    `• Cores: ${D.paleta}`,
+    `• Clima: luxuoso, cinematográfico, aspiracional, aparência de foto real de campanha`,
+    D.notas ? `• Notas do cheiro: ${D.notas}` : null,
+    "",
+    `PEÇA DE HOJE — ${pc.n.replace(/^\S+\s/, "")}:`,
+    pc.p(d, D),
+    "",
+    "O PERFUME (foto anexada): mantenha o frasco, a tampa, o rótulo, o nome e as cores EXATAMENTE como no original. Não invente outra marca e não deforme o frasco.",
+    "Deixe a parte de baixo da imagem (cerca de 25%) mais escura e sem objetos importantes, para eu colocar o título.",
+    "NÃO COLOQUE: textos escritos, logotipos ou marcas reais (carros, relógios, cartões, bebidas, roupas), marcas d'água, nem rostos de pessoas famosas."
+  ].filter(x => x !== null).join("\n");
+}
+let SP = null, SK = 0, ST_IM = null;
+function freq() { return (L && L.conteudo_freq) || 1; }
+function proximaData(p) { if (!p.conteudo_em) return new Date(0); const d = new Date(p.conteudo_em); d.setDate(d.getDate() + freq()); d.setHours(0, 0, 0, 0); return d; }
+function quandoTxt(p) {
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const dias = Math.round((proximaData(p) - hoje) / 864e5);
+  return dias <= 0 ? "hoje" : dias === 1 ? "amanhã" : `em ${dias} dias`;
+}
+function dadosPeca() { return { nome: SP.nome, preco: Number(SP.preco), tipo: SP.tipo, titulo: $("stTit").value.trim() || PECAS[SK].tit({ nome: SP.nome }, dnaDe(SP)) }; }
+function abrirEstudio(p) {
+  SP = p; SK = (p.conteudo_n || 0) % PECAS.length; ST_IM = null;
+  $("stCodigo").textContent = p.codigo || ""; $("stNome").textContent = p.nome;
+  $("stFoto").style.background = (TEMAS[p.tipo] || TEMAS.doce).bg;
+  $("stFoto").innerHTML = p.foto_url ? `<img src="${esc(p.foto_url)}" alt="">` : "🧴";
+  const D = dnaDe(p);
+  $("dnPersona").value = D.persona; $("dnPaleta").value = D.paleta; $("dnCenas").value = D.cenas.join("\n"); $("dnFrase").value = D.frase; $("dnNotas").value = D.notas;
+  $("stFreq").value = String(freq());
+  desenhaPecas(); escolhePeca(SK);
+  $("stModal").classList.add("on");
+}
+function desenhaPecas() {
+  const n = SP.conteudo_n || 0, serie = Math.floor(n / PECAS.length) + 1, prox = n % PECAS.length;
+  $("stSerie").textContent = `Série ${serie} • peça ${prox + 1} de ${PECAS.length} • próximo post: ${quandoTxt(SP)}`;
+  $("stPecas").innerHTML = PECAS.map((pc, i) => `<div class="ord peca${i === SK ? " sel" : ""}" data-k="${i}" style="cursor:pointer;align-items:center">
+    <div style="flex:1">${pc.n}</div>
+    <span style="font-size:12px">${i < prox ? "✅ feito" : i === prox ? "👉 próximo" : ""}</span></div>`).join("");
+}
+function escolhePeca(k) {
+  SK = k; ST_IM = null; $("stImg").value = ""; $("stTit").value = ""; $("stPrev").style.display = "none"; $("stBtns").style.display = "none"; $("stMsg").textContent = "";
+  $("stTit").placeholder = PECAS[k].tit({ nome: SP.nome }, dnaDe(SP));
+  $("stPecaTit").textContent = `Peça ${k + 1}: ${PECAS[k].n}`;
+  desenhaPecas();
+}
+async function montaPeca() { if (!ST_IM) return; await carregaLogoAura(); quadroAura($("stPrev"), 1, dadosPeca(), ST_IM); $("stPrev").style.display = "block"; $("stBtns").style.display = ""; }
+$("stPecas").onclick = e => { const r = e.target.closest(".peca"); if (r) escolhePeca(+r.dataset.k); };
+$("stCopiar").onclick = async () => { try { await navigator.clipboard.writeText(pedidoPeca(SP, SK)); toast("📋 Pedido copiado! Cole no Gemini com a foto do perfume."); } catch (e) { toast("Não consegui copiar."); } };
+$("stImg").onchange = async e => { const f = e.target.files[0]; if (!f) return; try { ST_IM = await carregaImagem(f); montaPeca(); } catch (er) { toast("⚠️ " + er.message); } };
+$("stTit").oninput = () => ST_IM && montaPeca();
+$("stBaixa").onclick = () => $("stPrev").toBlob(b => { baixa(b, nomeArq("png", SP.codigo + "-" + SP.nome + "-" + PECAS[SK].id)); $("stMsg").textContent = "✅ Imagem baixada!"; }, "image/png");
+$("stVideo").onclick = () => videoAura(dadosPeca(), ST_IM, $("stVideo"), $("stMsg"));
+$("stLegenda").onclick = async () => {
+  const D = dnaDe(SP), d = dadosPeca(), link = `${location.origin}/${L.slug}`;
+  const tag = SP.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+  const t = `✨ ${d.titulo} ✨\n\n${D.frase}\n${D.notas ? "\n🧴 " + D.notas + "\n" : ""}\n💰 ${brl(SP.preco)}\n📲 Peça pelo catálogo: ${link}\n🔖 Código: ${SP.codigo}\n\n#perfume #perfumaria #${tag} #perfumeimportado`;
+  try { await navigator.clipboard.writeText(t); toast("✍️ Legenda copiada!"); } catch (e) { toast("Não consegui copiar."); }
+};
+$("stPostei").onclick = async () => {
+  const atual = SP.conteudo_n || 0, base = Math.floor(atual / PECAS.length) * PECAS.length;
+  const n = SK >= atual % PECAS.length ? base + SK + 1 : atual, em = new Date().toISOString(); // refazer peça antiga não pula a série
+  const { error } = await sb.from("perfumes").update({ conteudo_n: n, conteudo_em: em }).eq("id", SP.id);
+  if (error) return toast("⚠️ " + error.message);
+  SP.conteudo_n = n; SP.conteudo_em = em; const q = P.find(x => x.id === SP.id); if (q) Object.assign(q, { conteudo_n: n, conteudo_em: em });
+  toast(n % PECAS.length === 0 ? "🏆 Série completa! A próxima começa de novo, com cenas novas da IA." : "✅ Anotado! Próximo post: " + quandoTxt(SP));
+  escolhePeca(n % PECAS.length); conteudoHoje();
+};
+$("dnSalvar").onclick = async () => {
+  const dna = { persona: $("dnPersona").value.trim(), paleta: $("dnPaleta").value.trim(), cenas: $("dnCenas").value.split("\n").map(s => s.trim()).filter(Boolean).slice(0, 8), frase: $("dnFrase").value.trim(), notas: $("dnNotas").value.trim() };
+  const { error } = await sb.from("perfumes").update({ dna }).eq("id", SP.id);
+  if (error) return toast("⚠️ " + error.message);
+  SP.dna = dna; toast("🧬 DNA salvo! Os próximos pedidos seguem essa história.");
+};
+$("stFreq").onchange = async () => {
+  const v = +$("stFreq").value; const { error } = await sb.from("lojas").update({ conteudo_freq: v }).eq("id", L.id);
+  if (error) return toast("⚠️ " + error.message);
+  L.conteudo_freq = v; desenhaPecas(); conteudoHoje(); toast("🗓️ Ritmo salvo");
+};
+$("stFechar").onclick = () => $("stModal").classList.remove("on");
+$("stModal").onclick = e => { if (e.target.id === "stModal") $("stModal").classList.remove("on"); };
+$("stBusca").onclick = () => {
+  let c = $("stCod").value.trim().toUpperCase().replace(/\s/g, ""); if (/^\d+$/.test(c)) c = "P-" + c.padStart(3, "0"); if (/^P\d+$/.test(c)) c = "P-" + c.slice(1).padStart(3, "0");
+  const p = P.find(x => (x.codigo || "").toUpperCase() === c);
+  if (!p) return toast("Não achei o código " + c);
+  abrirEstudio(p);
+};
+$("stCod").onkeydown = e => { if (e.key === "Enter") $("stBusca").click(); };
+function conteudoHoje() {
+  if (!P.length) { $("hojeBox").style.display = "none"; return; }
+  const hoje = new Date(); hoje.setHours(23, 59, 59);
+  const vez = P.filter(p => !p.esgotado && proximaData(p) <= hoje).sort((a, b) => (a.conteudo_em || "").localeCompare(b.conteudo_em || "")).slice(0, 3);
+  $("hojeBox").style.display = vez.length ? "" : "none";
+  $("hojeLista").innerHTML = vez.map(p => { const k = (p.conteudo_n || 0) % PECAS.length; return `<div class="ord" style="align-items:center"><div style="flex:1;min-width:0"><span class="codchip">${esc(p.codigo || "")}</span> <b>${esc(p.nome)}</b><br><span>Peça ${k + 1}: ${PECAS[k].n}</span></div><button class="mk" data-hoje="${p.id}" style="background:linear-gradient(135deg,#f3c96b,#e09a3a);color:#1a1020">🎬 Fazer</button></div>`; }).join("");
+}
+$("hojeLista").onclick = e => { const b = e.target.closest("[data-hoje]"); if (!b) return; const p = P.find(x => x.id === b.dataset.hoje); if (p) abrirEstudio(p); };
+
 function pedidoGemini() {
   const nome = $("pfNome").value.trim(), desc = $("pfDesc").value.trim();
   const extra = [nome && `Nome: ${nome}`, `Estilo do cheiro: ${ESTILO[$("pfTipo").value]}`, desc && `Notas: ${desc}`].filter(Boolean).join(". ");

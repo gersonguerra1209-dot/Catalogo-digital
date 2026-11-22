@@ -93,7 +93,7 @@ function montar() {
   $("app").innerHTML = `
   <div class="top">
     <div class="logo">✦ ${esc(L.nome)}</div>
-    <div class="tabs"><button class="tab on" data-v="per">Perfil</button><button class="tab" data-v="cat">Catálogo</button></div>
+    <div class="tabs"><button class="tab on" data-v="per">Perfil</button><button class="tab tabcat" data-v="cat">🛍️ Catálogo</button></div>
   </div>
   <section id="per" class="panel on">
     <div class="cover" id="cover"></div>
@@ -108,6 +108,11 @@ function montar() {
         <a class="btn mapa" href="${mapsHref()}" target="_blank" rel="noopener">🧭 Como chegar</a>
       </div>
       <div class="promo pr" style="margin-top:12px">🔥 <span class="prT"></span> termina em <b class="cdv">--</b></div>
+    </div>
+    <button class="btn gold cta vertodos" id="verTodos">🛍️ Ver todos os perfumes (${P.length}) →</button>
+    <div class="ganhar" id="ganhar">
+      <span>🎁 Veja o que você pode ganhar</span>
+      <div class="setas"><i>⌄</i><i>⌄</i></div>
     </div>
     <div class="stories" id="stories"></div>
     <div id="featSec"><div class="sec">🔥 O mais pedido</div><div class="feat" id="feat"></div></div>
@@ -128,7 +133,6 @@ function montar() {
     </div></div>
     <div id="fidSec" style="display:none"><div class="sec">⭐ Cartão Fidelidade</div><div class="fidcard" id="fidCard"></div></div>
     <div id="spotSec" style="display:none"><div class="sec">🎧 Nossa playlist</div><div id="spotBox"></div></div>
-    <button class="btn gold cta" id="verTodos" style="margin-top:18px">✨ Ver todos os perfumes</button>
     <div class="box" id="instBox" style="display:none;text-align:center;margin-top:14px">
       <b>📲 Salve a ${esc(L.nome)} no seu celular</b>
       <p style="font-size:13px;color:var(--mut);margin:6px 0 10px" id="instTxt">Fica um ícone na sua tela, igual aplicativo. Abre direto na loja, com as promoções do dia.</p>
@@ -151,6 +155,13 @@ function montar() {
   for (const id of ["cover", "hero"]) { const el = $(id); for (let i = 0; i < 16; i++) { const s = document.createElement("i"); s.className = "spark"; s.style.left = Math.random() * 100 + "%"; s.style.top = Math.random() * 100 + "%"; s.style.animationDelay = Math.random() * 6 + "s"; el.appendChild(s); } }
   document.querySelectorAll(".tab").forEach(t => t.onclick = () => irPara(t.dataset.v));
   $("verTodos").onclick = () => { filtro = "todos"; chips(); grid(); irPara("cat"); };
+  // a seta leva direto para os prêmios: roleta de prêmios, depois cartão fidelidade, depois roleta do perfume
+  $("ganhar").onclick = () => {
+    const alvo = [$("r2Sec"), $("fidSec"), $("r1Sec")].find(e => e && e.style.display !== "none");
+    if (alvo) alvo.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  const temPremio = (L.premios_on && (L.premios || []).length >= 2) || (L.fid_on && (L.fid_brinde || "").trim()) || P.filter(p => p.na_roleta && !p.esgotado).length >= 2;
+  if (!temPremio) $("ganhar").style.display = "none";
   $("irLoja").onclick = () => { irPara("per"); setTimeout(() => $("loja").scrollIntoView({ behavior: "smooth" }), 50); };
   $("modal").onclick = e => { if (e.target.id === "modal") fechar(); };
   $("girar").onclick = girar1; $("girar2").onclick = girar2;
