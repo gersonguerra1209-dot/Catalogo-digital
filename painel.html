@@ -67,6 +67,27 @@
 
   <!-- INÍCIO -->
   <section id="ini" class="panel">
+    <!-- PALCO 3D -->
+    <div class="palco" id="palco">
+      <canvas id="estrelas"></canvas>
+      <div class="pTopo">
+        <div class="pLogo" id="pLogo">✦</div>
+        <div style="flex:1;min-width:0"><div class="pOla" id="pOla">Olá ✨</div><div class="pSub" id="pSub"></div></div>
+        <button class="pLeve" id="pLeve" type="button" title="Modo leve">⚡</button>
+      </div>
+      <div class="orbita" id="orbita"></div>
+      <div class="pNav">
+        <button class="pSeta" id="pAnt" type="button" aria-label="Anterior">‹</button>
+        <div class="pDots" id="pDots"></div>
+        <button class="pSeta" id="pProx" type="button" aria-label="Próximo">›</button>
+      </div>
+      <button class="pGeral" id="pGeral" type="button">🌌 Visão geral</button>
+    </div>
+    <div class="box n3d">
+      <div class="n3dTit"><span>RESULTADOS DA SUA LOJA</span><h3>Seus números em <b>3D</b></h3></div>
+      <div class="barras3d" id="barras3d"></div>
+      <p class="note">Números reais da sua loja, desde o começo.</p>
+    </div>
     <div id="avisoPlano"></div>
     <div class="box" id="hojeBox" style="display:none;border-color:#6b4f1e;background:linear-gradient(160deg,#1d1208,#140e1e)">
       <h3>📅 Conteúdo de hoje</h3>
@@ -430,11 +451,97 @@ $("copiar").onclick = async () => { try { await navigator.clipboard.writeText(li
 async function carregaStats() {
   if (!L) return;
   const { data } = await sb.rpc("stats_loja", { p_loja: L.id });
-  if (data) { $("kVis").textContent = data.visitas; $("kPed").textContent = data.pedidos; $("kVen").textContent = data.vendas; $("kGir").textContent = data.giros; $("kRes").textContent = data.resgates; }
+  if (data) { $("kVis").textContent = data.visitas; $("kPed").textContent = data.pedidos; $("kVen").textContent = data.vendas; $("kGir").textContent = data.giros; $("kRes").textContent = data.resgates; barras3d(data); }
+  palco3d();
   $("kPer").textContent = P.length;
   const top = [...P].sort((a, b) => b.cliques - a.cliques).slice(0, 6), max = Math.max(1, ...top.map(p => p.cliques));
   $("bars").innerHTML = top.length ? top.map(p => `<div style="display:flex;align-items:center;gap:8px;margin:8px 0;font-size:12px"><span style="width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.nome)}</span><div style="flex:1;height:10px;background:#2a2038;border-radius:6px;overflow:hidden"><div style="height:100%;width:${p.cliques / max * 100}%;background:linear-gradient(90deg,var(--gold),#ff7a59)"></div></div><span style="width:30px;text-align:right;color:var(--mut)">${p.cliques}</span></div>`).join("") : `<p class="note">Assim que os clientes abrirem os perfumes, aparece aqui.</p>`;
 }
+
+// ===== Palco 3D do Início =====
+let P3 = 0, P3_GERAL = false;
+const leve = () => { try { return localStorage.getItem("painel_leve") === "1"; } catch (e) { return false; } };
+function aplicaLeve() { document.body.classList.toggle("leve", leve()); $("pLeve").classList.toggle("on", leve()); if (!leve()) estrelas(); }
+$("pLeve").onclick = () => { try { localStorage.setItem("painel_leve", leve() ? "0" : "1"); } catch (e) {} aplicaLeve(); toast(leve() ? "⚡ Modo leve ligado: sem animações" : "✨ Animações ligadas"); };
+async function palco3d() {
+  if (!L) return;
+  const h = new Date().getHours(), sauda = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
+  $("pOla").textContent = `${sauda}, ${L.nome} ✨`;
+  $("pSub").textContent = "Toque num cartão para abrir";
+  $("pLogo").innerHTML = L.logo_url ? `<img src="${esc(L.logo_url)}" alt="">` : "✦";
+  let novos = 0;
+  try { const r = await sb.from("pedidos").select("id", { count: "exact", head: true }).eq("loja_id", L.id).eq("status", "novo"); novos = r.count || 0; } catch (e) {}
+  const promo = L.promo_on && L.promo_fim && new Date(L.promo_fim) > new Date();
+  const C = [
+    { ic: "🧴", t: "Perfumes", v: `${P.length} cadastrado${P.length === 1 ? "" : "s"}`, go: "per" },
+    { ic: "💬", t: "Pedidos", v: novos ? `${novos} novo${novos > 1 ? "s" : ""} esperando` : "Nenhum novo", go: "ped", alerta: novos > 0 },
+    { ic: "🔥", t: "Promoções", v: promo ? "1 promoção no ar" : "Nenhuma no ar", go: "pro" },
+    { ic: "🏪", t: "Minha loja", v: "Dados, mapa e música", go: "loj" }
+  ];
+  $("orbita").innerHTML = C.map((c, i) => `<div class="c3d${c.alerta ? " alerta" : ""}" data-i="${i}" data-go="${c.go}"><div class="c3dIc">${c.ic}</div><b>${c.t}</b><span>${c.v}</span></div>`).join("");
+  $("pDots").innerHTML = C.map((_, i) => `<i data-i="${i}"></i>`).join("");
+  posiciona();
+}
+function posiciona() {
+  const cs = [...document.querySelectorAll("#orbita .c3d")], n = cs.length;
+  $("orbita").classList.toggle("geral", P3_GERAL);
+  $("pGeral").textContent = P3_GERAL ? "🎯 Voltar ao foco" : "🌌 Visão geral";
+  cs.forEach((c, i) => {
+    let d = i - P3; if (d > n / 2) d -= n; if (d < -n / 2) d += n;
+    if (P3_GERAL) {
+      const pos = [[-24, -72, -40, 14], [24, -58, -110, -12], [-22, 78, -150, -10], [24, 92, -60, 12]][i % 4];
+      c.style.transform = `translate(-50%,-50%) translate(${pos[0]}vw,${pos[1]}px) translateZ(${pos[2]}px) rotateY(${pos[3]}deg) scale(.62)`;
+      c.style.opacity = 1; c.style.zIndex = 10 - i; c.style.pointerEvents = "auto";
+    } else {
+      const a = Math.abs(d);
+      c.style.transform = `translate(-50%,-50%) translateX(${d * 62}%) translateZ(${-a * 160}px) rotateY(${-d * 32}deg) scale(${1 - a * .12})`;
+      c.style.opacity = a > 1 ? 0 : 1 - a * .45; c.style.zIndex = 10 - a; c.style.pointerEvents = a > 1 ? "none" : "auto";
+    }
+    c.classList.toggle("foco", !P3_GERAL && d === 0);
+  });
+  document.querySelectorAll("#pDots i").forEach((t, i) => t.classList.toggle("on", i === P3));
+}
+const giraP3 = s => { const n = document.querySelectorAll("#orbita .c3d").length; if (!n) return; P3_GERAL = false; P3 = (P3 + s + n) % n; posiciona(); };
+$("pAnt").onclick = () => giraP3(-1); $("pProx").onclick = () => giraP3(1);
+$("pDots").onclick = e => { const t = e.target.closest("i[data-i]"); if (t) { P3_GERAL = false; P3 = +t.dataset.i; posiciona(); } };
+$("pGeral").onclick = () => { P3_GERAL = !P3_GERAL; posiciona(); };
+$("orbita").onclick = e => {
+  const c = e.target.closest(".c3d"); if (!c) return;
+  if (P3_GERAL || +c.dataset.i !== P3) { P3_GERAL = false; P3 = +c.dataset.i; posiciona(); return; }
+  const go = c.dataset.go; mostra(go);
+  if (go === "ped") { carregaPedidos(); carregaFid(); } if (go === "pro") carregaCupons();
+};
+(function () { // deslizar o dedo para girar
+  let x0 = null; const o = $("orbita");
+  o.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, { passive: true });
+  o.addEventListener("touchend", e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) giraP3(dx < 0 ? 1 : -1); });
+})();
+function barras3d(d) {
+  const B = [{ n: "Visitas", v: +d.visitas || 0, c: "roxo" }, { n: "Pedidos", v: +d.pedidos || 0, c: "rosa" }, { n: "Vendas", v: +d.vendas || 0, c: "ouro" }];
+  const max = Math.max(1, ...B.map(b => b.v));
+  $("barras3d").innerHTML = B.map(b => `<div class="b3d ${b.c}"><em>${b.v}</em><div class="pr" style="--h:${Math.max(8, Math.round(b.v / max * 100))}%"><i class="f"></i><i class="l"></i><i class="t"></i></div><small>${b.n}</small></div>`).join("");
+}
+let ESTRELAS_ON = false;
+function estrelas() {
+  if (ESTRELAS_ON || leve()) return; ESTRELAS_ON = true;
+  const cv = $("estrelas"), c = cv.getContext("2d"); let W, H; const S = [];
+  const tam = () => { const r = cv.parentElement.getBoundingClientRect(); W = cv.width = r.width * devicePixelRatio; H = cv.height = r.height * devicePixelRatio; };
+  tam(); addEventListener("resize", tam);
+  for (let i = 0; i < 90; i++) S.push({ x: Math.random() * 2 - 1, y: Math.random() * 2 - 1, z: Math.random() });
+  (function f() {
+    if (leve() || !$("ini").classList.contains("on")) { ESTRELAS_ON = leve() ? false : ESTRELAS_ON; if (!leve()) requestAnimationFrame(f); else c.clearRect(0, 0, W, H); return; }
+    c.clearRect(0, 0, W, H);
+    for (const s of S) {
+      s.z -= 0.0035; if (s.z <= 0.02) { s.x = Math.random() * 2 - 1; s.y = Math.random() * 2 - 1; s.z = 1; }
+      const px = W / 2 + s.x / s.z * W * .35, py = H / 2 + s.y / s.z * H * .35, r = (1 - s.z) * 2.2 * devicePixelRatio;
+      if (px < 0 || px > W || py < 0 || py > H) { s.z = 1; continue; }
+      c.fillStyle = s.z < .3 ? "rgba(243,201,107,.95)" : "rgba(214,203,230,.7)";
+      c.beginPath(); c.arc(px, py, r, 0, 6.3); c.fill();
+    }
+    requestAnimationFrame(f);
+  })();
+}
+aplicaLeve();
 
 // ===== Perfumes =====
 async function carregaPerfumes() {
