@@ -519,7 +519,7 @@ $("orbita").onclick = e => {
 function barras3d(d) {
   const B = [{ n: "Visitas", v: +d.visitas || 0, c: "roxo" }, { n: "Pedidos", v: +d.pedidos || 0, c: "rosa" }, { n: "Vendas", v: +d.vendas || 0, c: "ouro" }];
   const max = Math.max(1, ...B.map(b => b.v));
-  $("barras3d").innerHTML = B.map(b => `<div class="b3d ${b.c}"><em>${b.v}</em><div class="pr" style="--h:${Math.max(8, Math.round(b.v / max * 100))}%"><i class="f"></i><i class="l"></i><i class="t"></i></div><small>${b.n}</small></div>`).join("");
+  $("barras3d").innerHTML = B.map(b => `<div class="b3d ${b.c}"><em>${b.v}</em><div class="pr3" style="--h:${Math.max(8, Math.round(b.v / max * 100))}%"><i class="f"></i><i class="l"></i><i class="t"></i></div><small>${b.n}</small></div>`).join("");
 }
 let ESTRELAS_ON = false;
 function estrelas() {
